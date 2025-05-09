@@ -1,0 +1,468 @@
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  User,
+  Mail,
+  Lock,
+  Phone,
+  Eye,
+  EyeOff,
+  Calendar,
+  MapPin,
+  Clipboard,
+} from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+
+const Register = () => {
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    password: "",
+    confirmPassword: "",
+    gender: "",
+    address: "",
+    medicareNumber: "",
+    emergencyContact: "",
+    agreeTerms: false,
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [success, setSuccess] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!formData.phone.trim()) newErrors.phone = "Phone is required";
+    if (!formData.dateOfBirth.trim())
+      newErrors.dateOfBirth = "Date of birth is required";
+    if (!formData.gender.trim()) newErrors.gender = "Gender is required";
+    if (!formData.address.trim()) newErrors.address = "Address is required";
+    if (!formData.medicareNumber.trim())
+      newErrors.medicareNumber = "Medicare number is required";
+    if (!formData.emergencyContact.trim())
+      newErrors.emergencyContact = "Emergency contact is required";
+    if (!formData.password) newErrors.password = "Password is required";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (formData.password && formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (!formData.agreeTerms) {
+      newErrors.agreeTerms = "You must agree to the terms";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (validateForm()) {
+      setIsSubmitting(true);
+
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSuccess(true);
+      }, 1500);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-12">
+        <div className="max-w-md mx-auto px-4 sm:px-6">
+          <Card className="p-8">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <svg
+                  className="h-6 w-6 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h2 className="mt-6 text-2xl font-bold text-gray-900">
+                Registration Successful!
+              </h2>
+              <p className="mt-2 text-gray-600">
+                Your account has been created successfully. Please check your
+                email to verify your account.
+              </p>
+              <div className="mt-6">
+                <Link to="/login">
+                  <Button className="w-full">Proceed to Login</Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-50 min-h-screen py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <Card className="p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Create an Account
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Join MediSys Hospital for easy appointment booking and more
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  htmlFor="fullName"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.fullName ? "border-red-500" : ""
+                  }`}
+                  value={formData.fullName}
+                  onChange={handleChange}
+                />
+                {errors.fullName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.email ? "border-red-500" : ""
+                  }`}
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.phone ? "border-red-500" : ""
+                  }`}
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="dateOfBirth"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Date of Birth *
+                </label>
+                <input
+                  type="date"
+                  id="dateOfBirth"
+                  name="dateOfBirth"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.dateOfBirth ? "border-red-500" : ""
+                  }`}
+                  value={formData.dateOfBirth}
+                  onChange={handleChange}
+                />
+                {errors.dateOfBirth && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.dateOfBirth}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="gender"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Gender *
+                </label>
+                <select
+                  id="gender"
+                  name="gender"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.gender ? "border-red-500" : ""
+                  }`}
+                  value={formData.gender}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+                {errors.gender && (
+                  <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="address"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Address *
+                </label>
+                <input
+                  type="text"
+                  id="address"
+                  name="address"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.address ? "border-red-500" : ""
+                  }`}
+                  value={formData.address}
+                  onChange={handleChange}
+                />
+                {errors.address && (
+                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="medicareNumber"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Medicare Number *
+                </label>
+                <input
+                  type="text"
+                  id="medicareNumber"
+                  name="medicareNumber"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.medicareNumber ? "border-red-500" : ""
+                  }`}
+                  value={formData.medicareNumber}
+                  onChange={handleChange}
+                />
+                {errors.medicareNumber && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.medicareNumber}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="emergencyContact"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Emergency Contact *
+                </label>
+                <input
+                  type="tel"
+                  id="emergencyContact"
+                  name="emergencyContact"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.emergencyContact ? "border-red-500" : ""
+                  }`}
+                  value={formData.emergencyContact}
+                  onChange={handleChange}
+                />
+                {errors.emergencyContact && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.emergencyContact}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Password *
+                </label>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.password ? "border-red-500" : ""
+                  }`}
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Confirm Password *
+                </label>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                    errors.confirmPassword ? "border-red-500" : ""
+                  }`}
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-start mt-6">
+              <div className="flex items-center h-5">
+                <input
+                  id="agreeTerms"
+                  name="agreeTerms"
+                  type="checkbox"
+                  className={`h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded ${
+                    errors.agreeTerms ? "border-red-500" : ""
+                  }`}
+                  checked={formData.agreeTerms}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor="agreeTerms" className="text-gray-700">
+                  I agree to the{" "}
+                  <a href="#" className="text-primary hover:underline">
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a href="#" className="text-primary hover:underline">
+                    Privacy Policy
+                  </a>
+                </label>
+                {errors.agreeTerms && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.agreeTerms}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Creating Account..." : "Create Account"}
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-6 text-center text-sm text-gray-600">
+            <p>
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-medium text-primary hover:text-primary/80"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Register;
