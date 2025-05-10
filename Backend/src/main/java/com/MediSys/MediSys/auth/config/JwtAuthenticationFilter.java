@@ -36,6 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/auth/");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String header = request.getHeader(HEADER_STRING);
         String username = null;
@@ -70,7 +76,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 logger.error("An error occurred while trying to authenticate user", e);
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
             }
-            }
-        filterChain.doFilter(request, response);
         }
+        filterChain.doFilter(request, response);
+    }
 }

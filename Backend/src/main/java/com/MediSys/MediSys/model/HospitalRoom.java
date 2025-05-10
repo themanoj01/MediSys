@@ -16,8 +16,8 @@ public class HospitalRoom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @Column(nullable = false)
     private String roomNumber;
+    @Column(nullable = false)
     private String type;
-    private boolean available;
 }
