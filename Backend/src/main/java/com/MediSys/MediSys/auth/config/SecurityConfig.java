@@ -26,24 +26,31 @@ public class SecurityConfig {
     }
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable)
-                .exceptionHandling((exception) -> exception.authenticationEntryPoint(unauthorizedEntryPoint))
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(request -> {
+                    var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
+                    corsConfiguration.setAllowedOrigins(java.util.List.of("http://localhost:5173","http://localhost:5174"));
+                    corsConfiguration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    corsConfiguration.setAllowedHeaders(java.util.List.of("*"));
+                    corsConfiguration.setAllowCredentials(true);
+                    return corsConfiguration;
+                }))
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> {
-                    authorize
-                            .requestMatchers("/auth/**","/swagger-ui/**","/v3/api-docs","/api/products/export","/api/orders/export").permitAll()
-                            .requestMatchers("/api/orders/import","/api/orders/create",
-                                    "/api/products/import","/api/products/create","/api/supplier/create").hasRole("ADMIN")
-                            .anyRequest().authenticated();
-                })
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/appointments/**").hasAnyRole("PATIENT", "DOCTOR")
+                        .anyRequest().authenticated()
+                )
                 .addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     @Bean
     public AuthenticationManager authenticationManager(
-        AuthenticationConfiguration authenticationConfiguration) throws Exception {
+            AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 

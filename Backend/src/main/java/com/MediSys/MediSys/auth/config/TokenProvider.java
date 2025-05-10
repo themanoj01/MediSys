@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class TokenProvider implements Serializable {
+
+    @Value("${jwt.signing.key}")
     private String secretKey;
 
     @Value("${jwt.token.validity}")

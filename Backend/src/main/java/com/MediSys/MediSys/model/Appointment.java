@@ -42,18 +42,6 @@ public class Appointment {
     @NotNull(message = "Status is required")
     private AppointmentStatus status;
 
-    @ManyToOne(optional = true)
-    @JoinColumn(name = "room_id")
-    private HospitalRoom room;
-
-    @ManyToMany
-    @JoinTable(
-            name = "appointment_resources",
-            joinColumns = @JoinColumn(name = "appointment_id"),
-            inverseJoinColumns = @JoinColumn(name = "resource_id")
-    )
-    private List<HospitalResource> resources = new ArrayList<>();
-
     @CreationTimestamp
     private LocalDateTime createdAt;
 
