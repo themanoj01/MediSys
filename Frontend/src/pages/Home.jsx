@@ -35,12 +35,12 @@ const Home = () => {
                 dedicated to your well-being.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/appointment">
+                <Link to="/appointment">
                   <Button size="lg" className="font-semibold">
                     Book Appointment
                   </Button>
                 </Link>
-                <Link href="/doctors">
+                <Link to="/doctors">
                   <Button
                     size="lg"
                     variant="outline"

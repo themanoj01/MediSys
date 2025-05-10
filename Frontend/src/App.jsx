@@ -18,6 +18,7 @@ import MyBookings from "./pages/MyBookings";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
               <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
