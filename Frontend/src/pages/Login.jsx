@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
+import axios from "axios";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -20,34 +22,47 @@ const Login = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      if (
-        formData.email === "admin@example.com" &&
-        formData.password === "password"
-      ) {
-        window.location.href = "/admin-dashboard";
-      } else if (
-        formData.email === "doctor@example.com" &&
-        formData.password === "password"
-      ) {
-        window.location.href = "/doctor-dashboard";
-      } else if (
-        formData.email === "user@example.com" &&
-        formData.password === "password"
-      ) {
-        window.location.href = "/profile";
+    try {
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+      };
+
+      const response = await axios.post(
+        "http://localhost:8090/auth/login",
+        payload
+      );
+      const { token, role } = response.data;
+
+      localStorage.setItem("jwtToken", token);
+      localStorage.setItem("userRole", role);
+      window.dispatchEvent(new Event("authChange"));
+
+      if (role === "ADMIN") {
+        navigate("/admin-dashboard");
+      } else if (role === "DOCTOR") {
+        navigate("/doctor-dashboard");
+      } else if (role === "PATIENT") {
+        navigate("/");
       } else {
-        setError("Invalid email or password. Please try again.");
+        setError("Unknown role. Please contact support.");
       }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Invalid email or password. Please try again."
+      );
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -96,6 +111,8 @@ const Login = () => {
                     placeholder="you@example.com"
                     value={formData.email}
                     onChange={handleChange}
+                    aria-invalid={error ? "true" : "false"}
+                    aria-describedby={error ? "email-error" : ""}
                   />
                 </div>
               </div>
@@ -121,11 +138,16 @@ const Login = () => {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
+                    aria-invalid={error ? "true" : "false"}
+                    aria-describedby={error ? "password-error" : ""}
                   />
                   <button
                     type="button"
                     onClick={togglePasswordVisibility}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5 text-gray-400" />
@@ -158,7 +180,7 @@ const Login = () => {
               <div>
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-primary hover:bg-primary/90"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Signing in..." : "Sign in"}
@@ -177,23 +199,6 @@ const Login = () => {
                 Sign up
               </Link>
             </p>
-          </div>
-
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
-              Demo Credentials:
-            </h3>
-            <div className="space-y-2 text-xs text-gray-600">
-              <p>
-                <strong>Admin:</strong> admin@example.com / password
-              </p>
-              <p>
-                <strong>Doctor:</strong> doctor@example.com / password
-              </p>
-              <p>
-                <strong>Patient:</strong> user@example.com / password
-              </p>
-            </div>
           </div>
         </Card>
       </div>

@@ -19,7 +19,7 @@ const Services = () => {
               technology.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link href="/appointment">
+              <Link to="/appointment">
                 <Button
                   size="lg"
                   className="bg-white text-primary hover:bg-gray-100"

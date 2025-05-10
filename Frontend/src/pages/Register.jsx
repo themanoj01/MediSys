@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
+import axios from "axios";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -33,6 +34,7 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
+  const [apiError, setApiError] = useState("");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -47,6 +49,7 @@ const Register = () => {
         [name]: "",
       }));
     }
+    setApiError("");
   };
 
   const validateForm = () => {
@@ -82,20 +85,56 @@ const Register = () => {
       newErrors.agreeTerms = "You must agree to the terms";
     }
 
+    const medicareRegex = /^\d{10,11}$/;
+    if (
+      formData.medicareNumber &&
+      !medicareRegex.test(formData.medicareNumber)
+    ) {
+      newErrors.medicareNumber = "Medicare number must be 10 or 11 digits";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError("");
 
-    if (validateForm()) {
-      setIsSubmitting(true);
+    if (!validateForm()) {
+      return;
+    }
 
-      setTimeout(() => {
-        setIsSubmitting(false);
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        address: formData.address,
+        medicareNumber: formData.medicareNumber,
+        emergencyContact: formData.emergencyContact,
+      };
+
+      const response = await axios.post(
+        "http://localhost:8090/auth/register-patient",
+        payload
+      );
+
+      if (response.status === 200) {
         setSuccess(true);
-      }, 1500);
+      }
+    } catch (error) {
+      setApiError(
+        error.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -124,8 +163,8 @@ const Register = () => {
                 Registration Successful!
               </h2>
               <p className="mt-2 text-gray-600">
-                Your account has been created successfully. Please check your
-                email to verify your account.
+                Your account has been created successfully. Please proceed to
+                Login.
               </p>
               <div className="mt-6">
                 <Link to="/login">
@@ -152,99 +191,136 @@ const Register = () => {
             </p>
           </div>
 
+          {apiError && (
+            <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+              {apiError}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="fullName"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Full Name *
                 </label>
-                <input
-                  type="text"
-                  id="fullName"
-                  name="fullName"
-                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
-                    errors.fullName ? "border-red-500" : ""
-                  }`}
-                  value={formData.fullName}
-                  onChange={handleChange}
-                />
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    className={`pl-10 w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                      errors.fullName ? "border-red-500" : ""
+                    }`}
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    aria-invalid={errors.fullName ? "true" : "false"}
+                    aria-describedby={errors.fullName ? "fullName-error" : ""}
+                  />
+                </div>
                 {errors.fullName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+                  <p id="fullName-error" className="mt-1 text-sm text-red-600">
+                    {errors.fullName}
+                  </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="email"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Email Address *
                 </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
-                    errors.email ? "border-red-500" : ""
-                  }`}
-                  value={formData.email}
-                  onChange={handleChange}
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    className={`pl-10 w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                      errors.email ? "border-red-500" : ""
+                    }`}
+                    value={formData.email}
+                    onChange={handleChange}
+                    aria-invalid={errors.email ? "true" : "false"}
+                    aria-describedby={errors.email ? "email-error" : ""}
+                  />
+                </div>
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  <p id="email-error" className="mt-1 text-sm text-red-600">
+                    {errors.email}
+                  </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="phone"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Phone Number *
                 </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
-                    errors.phone ? "border-red-500" : ""
-                  }`}
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    className={`pl-10 w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                      errors.phone ? "border-red-500" : ""
+                    }`}
+                    value={formData.phone}
+                    onChange={handleChange}
+                    aria-invalid={errors.phone ? "true" : "false"}
+                    aria-describedby={errors.phone ? "phone-error" : ""}
+                  />
+                </div>
                 {errors.phone && (
-                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                  <p id="phone-error" className="mt-1 text-sm text-red-600">
+                    {errors.phone}
+                  </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="dateOfBirth"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Date of Birth *
                 </label>
-                <input
-                  type="date"
-                  id="dateOfBirth"
-                  name="dateOfBirth"
-                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
-                    errors.dateOfBirth ? "border-red-500" : ""
-                  }`}
-                  value={formData.dateOfBirth}
-                  onChange={handleChange}
-                />
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="date"
+                    id="dateOfBirth"
+                    name="dateOfBirth"
+                    className={`pl-10 w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                      errors.dateOfBirth ? "border-red-500" : ""
+                    }`}
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                    aria-invalid={errors.dateOfBirth ? "true" : "false"}
+                    aria-describedby={
+                      errors.dateOfBirth ? "dateOfBirth-error" : ""
+                    }
+                  />
+                </div>
                 {errors.dateOfBirth && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p
+                    id="dateOfBirth-error"
+                    className="mt-1 text-sm text-red-600"
+                  >
                     {errors.dateOfBirth}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="gender"
                   className="block text-sm font-medium text-gray-700 mb-1"
@@ -259,6 +335,8 @@ const Register = () => {
                   }`}
                   value={formData.gender}
                   onChange={handleChange}
+                  aria-invalid={errors.gender ? "true" : "false"}
+                  aria-describedby={errors.gender ? "gender-error" : ""}
                 >
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
@@ -266,143 +344,195 @@ const Register = () => {
                   <option value="Other">Other</option>
                 </select>
                 {errors.gender && (
-                  <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
+                  <p id="gender-error" className="mt-1 text-sm text-red-600">
+                    {errors.gender}
+                  </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="address"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Address *
                 </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
-                    errors.address ? "border-red-500" : ""
-                  }`}
-                  value={formData.address}
-                  onChange={handleChange}
-                />
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    className={`pl-10 w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                      errors.address ? "border-red-500" : ""
+                    }`}
+                    value={formData.address}
+                    onChange={handleChange}
+                    aria-invalid={errors.address ? "true" : "false"}
+                    aria-describedby={errors.address ? "address-error" : ""}
+                  />
+                </div>
                 {errors.address && (
-                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                  <p id="address-error" className="mt-1 text-sm text-red-600">
+                    {errors.address}
+                  </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="medicareNumber"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Medicare Number *
                 </label>
-                <input
-                  type="text"
-                  id="medicareNumber"
-                  name="medicareNumber"
-                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
-                    errors.medicareNumber ? "border-red-500" : ""
-                  }`}
-                  value={formData.medicareNumber}
-                  onChange={handleChange}
-                />
+                <div className="relative">
+                  <Clipboard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="medicareNumber"
+                    name="medicareNumber"
+                    className={`pl-10 w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                      errors.medicareNumber ? "border-red-500" : ""
+                    }`}
+                    value={formData.medicareNumber}
+                    onChange={handleChange}
+                    aria-invalid={errors.medicareNumber ? "true" : "false"}
+                    aria-describedby={
+                      errors.medicareNumber ? "medicareNumber-error" : ""
+                    }
+                  />
+                </div>
                 {errors.medicareNumber && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p
+                    id="medicareNumber-error"
+                    className="mt-1 text-sm text-red-600"
+                  >
                     {errors.medicareNumber}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="emergencyContact"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Emergency Contact *
                 </label>
-                <input
-                  type="tel"
-                  id="emergencyContact"
-                  name="emergencyContact"
-                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
-                    errors.emergencyContact ? "border-red-500" : ""
-                  }`}
-                  value={formData.emergencyContact}
-                  onChange={handleChange}
-                />
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    id="emergencyContact"
+                    name="emergencyContact"
+                    className={`pl-10 w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                      errors.emergencyContact ? "border-red-500" : ""
+                    }`}
+                    value={formData.emergencyContact}
+                    onChange={handleChange}
+                    aria-invalid={errors.emergencyContact ? "true" : "false"}
+                    aria-describedby={
+                      errors.emergencyContact ? "emergencyContact-error" : ""
+                    }
+                  />
+                </div>
                 {errors.emergencyContact && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p
+                    id="emergencyContact-error"
+                    className="mt-1 text-sm text-red-600"
+                  >
                     {errors.emergencyContact}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="password"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Password *
                 </label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
-                    errors.password ? "border-red-500" : ""
-                  }`}
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    name="password"
+                    className={`pl-10 w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                      errors.password ? "border-red-500" : ""
+                    }`}
+                    value={formData.password}
+                    onChange={handleChange}
+                    aria-invalid={errors.password ? "true" : "false"}
+                    aria-describedby={errors.password ? "password-error" : ""}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
+                </div>
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                  <p id="password-error" className="mt-1 text-sm text-red-600">
+                    {errors.password}
+                  </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="confirmPassword"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Confirm Password *
                 </label>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  className={`w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
-                    errors.confirmPassword ? "border-red-500" : ""
-                  }`}
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    className={`pl-10 w-full border-gray-300 rounded-md focus:ring-primary focus:border-primary ${
+                      errors.confirmPassword ? "border-red-500" : ""
+                    }`}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    aria-invalid={errors.confirmPassword ? "true" : "false"}
+                    aria-describedby={
+                      errors.confirmPassword ? "confirmPassword-error" : ""
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    aria-label={
+                      showConfirmPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
+                </div>
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p
+                    id="confirmPassword-error"
+                    className="mt-1 text-sm text-red-600"
+                  >
                     {errors.confirmPassword}
                   </p>
                 )}
@@ -420,6 +550,8 @@ const Register = () => {
                   }`}
                   checked={formData.agreeTerms}
                   onChange={handleChange}
+                  aria-invalid={errors.agreeTerms ? "true" : "false"}
+                  aria-describedby={errors.agreeTerms ? "agreeTerms-error" : ""}
                 />
               </div>
               <div className="ml-3 text-sm">
@@ -434,7 +566,10 @@ const Register = () => {
                   </a>
                 </label>
                 {errors.agreeTerms && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p
+                    id="agreeTerms-error"
+                    className="mt-1 text-sm text-red-600"
+                  >
                     {errors.agreeTerms}
                   </p>
                 )}
@@ -442,7 +577,11 @@ const Register = () => {
             </div>
 
             <div className="mt-6">
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? "Creating Account..." : "Create Account"}
               </Button>
             </div>
