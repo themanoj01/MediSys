@@ -1,8 +1,11 @@
 package com.MediSys.MediSys.model;
 
 import com.MediSys.MediSys.auth.model.User;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -35,4 +38,8 @@ public class Doctor {
     private String gender;
 
     private boolean active = true;
+
+    @OneToMany(mappedBy = "doctor",orphanRemoval = true, cascade = CascadeType.ALL)
+    @JsonManagedReference()
+    private List<DoctorSchedule> schedules;
 }

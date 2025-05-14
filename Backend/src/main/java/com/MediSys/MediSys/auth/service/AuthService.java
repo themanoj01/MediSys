@@ -40,7 +40,7 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String token = tokenProvider.generateToken(authentication);
+        String token = tokenProvider.generateToken(authentication, user);
         String role = user.getRole().getName();
 
         return new AuthResponse(
