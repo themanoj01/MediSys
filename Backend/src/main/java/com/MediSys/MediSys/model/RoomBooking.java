@@ -1,4 +1,6 @@
 package com.MediSys.MediSys.model;
+import com.MediSys.MediSys.auth.model.User;
+import com.MediSys.MediSys.enums.BookingStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -26,6 +28,10 @@ public class RoomBooking {
     private Appointment appointment;
 
     @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne
     @JoinColumn(name = "room_id")
     @NotNull(message = "Room is required")
     private HospitalRoom room;
@@ -35,6 +41,9 @@ public class RoomBooking {
 
     @NotNull(message = "End date and time are required")
     private LocalDateTime endDateTime;
+
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

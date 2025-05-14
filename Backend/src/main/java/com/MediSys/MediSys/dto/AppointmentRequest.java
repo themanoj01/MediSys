@@ -19,7 +19,4 @@ public class AppointmentRequest {
     @NotNull(message = "Appointment date and time are required")
     private LocalDateTime appointmentDateTime;
 
-    private Long roomId;
-
-    private List<Long> resourceIds;
 }

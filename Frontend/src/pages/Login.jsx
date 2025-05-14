@@ -37,7 +37,7 @@ const Login = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:8090/auth/login",
+        "http://localhost:8090/api/auth/login",
         payload
       );
       const { token, role } = response.data;
