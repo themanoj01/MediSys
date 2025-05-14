@@ -35,4 +35,6 @@ public class Doctor {
     private String gender;
 
     private boolean active = true;
+
+    private String imageUrl;
 }

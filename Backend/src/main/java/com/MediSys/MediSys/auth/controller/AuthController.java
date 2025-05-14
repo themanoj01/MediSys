@@ -7,11 +7,10 @@ import com.MediSys.MediSys.auth.dto.RegisterDto;
 import com.MediSys.MediSys.auth.dto.UserLoginDto;
 import com.MediSys.MediSys.auth.service.AuthService;
 import com.MediSys.MediSys.auth.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -34,9 +33,11 @@ public class AuthController {
         return ResponseEntity.ok("Patient registered successfully.");
     }
 
-    @PostMapping("/register-doctor")
-    public ResponseEntity<?> register(@RequestBody RegisterDoctorDto registerDto) {
-        userService.registerDoctor(registerDto);
+    @PostMapping(value = "/register-doctor", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> registerDoctor(
+            @Valid @RequestPart("dto") RegisterDoctorDto registerDto,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        userService.registerDoctor(registerDto, image);
         return ResponseEntity.ok("Doctor registered successfully.");
     }
 }
