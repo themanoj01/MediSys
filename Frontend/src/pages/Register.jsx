@@ -121,7 +121,7 @@ const Register = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:8090/auth/register-patient",
+        "http://localhost:8090/api/auth/register-patient",
         payload
       );
 
