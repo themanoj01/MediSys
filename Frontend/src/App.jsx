@@ -20,11 +20,13 @@ import DoctorDashboard from "./pages/DoctorDashboard";
 import DoctorSchedule from "./pages/DoctorSchedule";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
     <TooltipProvider>
       <Router>
+         <Toaster position="top-center"/>
         <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-grow">
