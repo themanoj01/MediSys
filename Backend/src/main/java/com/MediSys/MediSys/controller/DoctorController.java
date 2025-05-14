@@ -1,10 +1,15 @@
 package com.MediSys.MediSys.controller;
 
+import com.MediSys.MediSys.auth.dto.RegisterDoctorDto;
+import com.MediSys.MediSys.exception.ResourceNotFoundException;
 import com.MediSys.MediSys.model.Doctor;
 import com.MediSys.MediSys.service.DoctorService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -28,17 +33,20 @@ public class DoctorController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public Doctor addDoctor(@RequestBody Doctor doctor) {
-        return doctorService.addDoctor(doctor);
-    }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Doctor> updateDoctor(@PathVariable Long id, @RequestBody Doctor doctor) {
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Doctor> updateDoctor(
+            @PathVariable Long id,
+            @Valid @RequestPart("doctor") RegisterDoctorDto dto,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
         try {
-            return ResponseEntity.ok(doctorService.updateDoctor(id, doctor));
-        } catch (RuntimeException e) {
+            Doctor updatedDoctor = doctorService.updateDoctor(id, dto, image);
+            return ResponseEntity.ok(updatedDoctor);
+        } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
         }
     }
 
