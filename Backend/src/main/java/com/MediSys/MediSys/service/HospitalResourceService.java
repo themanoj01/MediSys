@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -16,13 +17,15 @@ public class HospitalResourceService {
     private static final Logger logger = LoggerFactory.getLogger(HospitalResourceService.class);
 
     private final HospitalResourceRepository hospitalResourceRepository;
+    private final FileStorageService fileStorageService;
 
-    public HospitalResourceService(HospitalResourceRepository hospitalResourceRepository) {
+    public HospitalResourceService(HospitalResourceRepository hospitalResourceRepository, FileStorageService fileStorageService) {
         this.hospitalResourceRepository = hospitalResourceRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     @Transactional
-    public HospitalResource createResource(HospitalResourceDto dto) {
+    public HospitalResource createResource(HospitalResourceDto dto, MultipartFile image) {
         if (hospitalResourceRepository.existsByName(dto.getName())) {
             logger.warn("Attempt to create resource with existing name: {}", dto.getName());
             throw new IllegalArgumentException("Resource name already exists");
@@ -31,6 +34,13 @@ public class HospitalResourceService {
         HospitalResource resource = new HospitalResource();
         resource.setName(dto.getName());
         resource.setDescription(dto.getDescription());
+        resource.setQuantity(dto.getQuantity());
+        resource.setPrice(dto.getPrice());
+
+        if (image != null && !image.isEmpty()) {
+            String imagePath = fileStorageService.storeFile(image);
+            resource.setImage(imagePath);
+        }
 
         HospitalResource savedResource = hospitalResourceRepository.save(resource);
         logger.info("Resource created successfully: {}", savedResource.getId());
@@ -51,20 +61,28 @@ public class HospitalResourceService {
     }
 
     @Transactional
-    public HospitalResource updateResource(Long id, HospitalResourceDto dto) {
-        HospitalResource resource = hospitalResourceRepository.findById(id)
+    public HospitalResource updateResource(Long id, HospitalResourceDto dto, MultipartFile image) {
+        HospitalResource existingResource = hospitalResourceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found with ID: " + id));
 
-        if (!resource.getName().equals(dto.getName()) &&
+        if (!existingResource.getName().equals(dto.getName()) &&
                 hospitalResourceRepository.existsByName(dto.getName())) {
-            logger.warn("Attempt to update resource {} with existing name: {}", id, dto.getName());
+            logger.warn("Attempt to update resource with existing name: {}", dto.getName());
             throw new IllegalArgumentException("Resource name already exists");
         }
 
-        resource.setName(dto.getName());
-        resource.setDescription(dto.getDescription());
+        existingResource.setName(dto.getName());
+        existingResource.setDescription(dto.getDescription());
+        existingResource.setQuantity(dto.getQuantity());
+        existingResource.setPrice(dto.getPrice());
 
-        HospitalResource updatedResource = hospitalResourceRepository.save(resource);
+        if (image != null && !image.isEmpty()) {
+            fileStorageService.deleteFile(existingResource.getImage());
+            String imagePath = fileStorageService.storeFile(image);
+            existingResource.setImage(imagePath);
+        }
+
+        HospitalResource updatedResource = hospitalResourceRepository.save(existingResource);
         logger.info("Resource updated successfully: {}", id);
         return updatedResource;
     }
