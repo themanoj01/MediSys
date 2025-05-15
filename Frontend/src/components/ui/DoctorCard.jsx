@@ -53,7 +53,7 @@ const DoctorCard = ({
         </div>
       </CardContent>
       <CardFooter className="pt-2">
-        <Link href={`/doctors/${id}`}>
+        <Link to={`/doctors/${id}`}>
           <Button className="w-full" variant="outline">
             View Profile
           </Button>
