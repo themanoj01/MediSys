@@ -24,7 +24,7 @@ const DoctorCard = ({
     <Card className="h-full flex flex-col overflow-hidden transition-all duration-200 hover:shadow-lg">
       <div className="aspect-square w-full overflow-hidden">
         <img
-          src={imageUrl}
+          src={`http://localhost:8090${imageUrl}`}
           alt={name}
           className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
         />

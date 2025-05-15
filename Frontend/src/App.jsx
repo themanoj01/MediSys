@@ -30,14 +30,17 @@ import DoctorSchedule from "./pages/DoctorSchedule";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import AdminLayout from "./components/layout/AdminLayout";
+import DoctorLayout from "./components/layout/DoctorLayout";
 
 function AppContent() {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith("/admin");
+  const hideLayoutRoutes =
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/doctor");
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAdminRoute && <Navbar />}
+      {!hideLayoutRoutes && <Navbar />}
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -58,13 +61,16 @@ function AppContent() {
             <Route path="/admin/doctor-schedule" element={<DoctorSchedule />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
+          <Route element={<DoctorLayout />}>
+            <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+          </Route>
           <Route path="/my-bookings" element={<MyBookings />} />
           <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      {!isAdminRoute && <Footer />}
+      {!hideLayoutRoutes && <Footer />}
     </div>
   );
 }
