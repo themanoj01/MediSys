@@ -29,6 +29,9 @@ import DoctorDashboard from "./pages/DoctorDashboard";
 import DoctorSchedule from "./pages/DoctorSchedule";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
+import { Toaster } from "react-hot-toast";
+import RoomList from "./pages/RoomListPage";
+import HospitalResources from "./pages/HospitalResourcePage";
 import AdminLayout from "./components/layout/AdminLayout";
 import DoctorLayout from "./components/layout/DoctorLayout";
 
@@ -79,6 +82,33 @@ function App() {
   return (
     <TooltipProvider>
       <Router>
+         <Toaster position="top-center"/>
+        <div className="flex flex-col min-h-screen">
+          <Navbar />
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/doctors" element={<Doctors />} />
+              <Route path="/doctors/:id" element={<DoctorDetail />} />
+              <Route path="/appointment" element={<Appointment />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/faqs" element={<Faqs />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/my-bookings" element={<MyBookings />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/doctor-schedule" element={<DoctorSchedule />} />
+              <Route path="/rooms" element={<RoomList />} />
+              <Route path="/hospital-resource" element={<HospitalResources />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
         <AppContent />
       </Router>
     </TooltipProvider>

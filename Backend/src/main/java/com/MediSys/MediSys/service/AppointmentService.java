@@ -203,4 +203,10 @@ public class AppointmentService {
                 .findByDoctorAndAppointmentDateTimeBetween(doctor, startTime, endTime);
         return conflictingAppointments.isEmpty();
     }
+
+    public List<Appointment> findByDoctor(Long doctorId) {
+        Doctor doctor = doctorRepository.findById(doctorId).orElseThrow(()-> new RuntimeException("Doctor not found"));
+        List<Appointment> appointments = appointmentRepository.findByDoctor(doctor);
+        return appointments;
+    }
 }

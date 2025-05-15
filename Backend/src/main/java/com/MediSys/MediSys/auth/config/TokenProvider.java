@@ -1,5 +1,6 @@
 package com.MediSys.MediSys.auth.config;
 
+import com.MediSys.MediSys.auth.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -65,13 +66,14 @@ public class TokenProvider implements Serializable {
         return getExpirationDateFromToken(token).before(new Date());
     }
 
-    public String generateToken(Authentication authentication) {
+    public String generateToken(Authentication authentication, User user) {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
         return Jwts.builder()
                 .setSubject(authentication.getName())
                 .claim(AUTHORITIES_KEY, authorities)
+                .claim("userId", user.getId())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY * 1000))
                 .signWith(getKey(), SignatureAlgorithm.HS256)

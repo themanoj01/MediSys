@@ -37,4 +37,8 @@ public class Doctor {
     private boolean active = true;
 
     private String imageUrl;
+
+    @OneToMany(mappedBy = "doctor",orphanRemoval = true, cascade = CascadeType.ALL)
+    @JsonManagedReference()
+    private List<DoctorSchedule> schedules;
 }

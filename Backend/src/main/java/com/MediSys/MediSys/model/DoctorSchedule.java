@@ -1,5 +1,6 @@
 package com.MediSys.MediSys.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,6 +19,7 @@ public class DoctorSchedule {
 
     @ManyToOne
     @JoinColumn(name = "doctor_id")
+    @JsonBackReference
     private Doctor doctor;
 
     private String dayOfWeek;
