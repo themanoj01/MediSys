@@ -1,5 +1,6 @@
 package com.MediSys.MediSys.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,4 +12,6 @@ public class HospitalResourceDto {
     private String name;
 
     private String description;
+    @Min(value = 0, message = "Stock must be non-negative")
+    private int stock;
 }

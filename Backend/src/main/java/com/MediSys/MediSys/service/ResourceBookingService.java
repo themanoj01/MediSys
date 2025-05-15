@@ -56,10 +56,18 @@ public class ResourceBookingService {
         HospitalResource resource = hospitalResourceRepository.findById(request.getResourceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found with ID: " + request.getResourceId()));
 
+        if (resource.getStock() <= 0) {
+            throw new RuntimeException("No stock available for the selected resource");
+        }
+
         if (!checkResourceAvailability(resource, request.getStartDateTime(), request.getEndDateTime())) {
             logger.warn("Resource {} is not available from {} to {}", resource.getId(), request.getStartDateTime(), request.getEndDateTime());
             throw new RuntimeException("Resource is already booked for the selected time");
         }
+
+        resource.setStock(resource.getStock() - 1);
+        hospitalResourceRepository.save(resource);
+
 
         ResourceBooking booking = new ResourceBooking();
         booking.setResource(resource);

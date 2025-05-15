@@ -17,7 +17,8 @@ public class HospitalResource {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name; // e.g., Oxygen Cylinder, Wheelchair
+    private String name;
     private String description;
+    private int stock;
 
 }

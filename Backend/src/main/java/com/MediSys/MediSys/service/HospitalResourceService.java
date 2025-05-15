@@ -31,7 +31,7 @@ public class HospitalResourceService {
         HospitalResource resource = new HospitalResource();
         resource.setName(dto.getName());
         resource.setDescription(dto.getDescription());
-
+        resource.setStock(dto.getStock());
         HospitalResource savedResource = hospitalResourceRepository.save(resource);
         logger.info("Resource created successfully: {}", savedResource.getId());
         return savedResource;
@@ -63,7 +63,7 @@ public class HospitalResourceService {
 
         resource.setName(dto.getName());
         resource.setDescription(dto.getDescription());
-
+        resource.setStock(dto.getStock());
         HospitalResource updatedResource = hospitalResourceRepository.save(resource);
         logger.info("Resource updated successfully: {}", id);
         return updatedResource;
