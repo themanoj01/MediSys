@@ -21,6 +21,8 @@ import DoctorSchedule from "./pages/DoctorSchedule";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import { Toaster } from "react-hot-toast";
+import RoomList from "./pages/RoomListPage";
+import HospitalResources from "./pages/HospitalResourcePage";
 
 function App() {
   return (
@@ -46,6 +48,8 @@ function App() {
               <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/doctor-schedule" element={<DoctorSchedule />} />
+              <Route path="/rooms" element={<RoomList />} />
+              <Route path="/hospital-resource" element={<HospitalResources />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

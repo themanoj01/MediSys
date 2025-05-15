@@ -19,10 +19,10 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    @Value("Authorization")
+    @Value("${jwt.header.string}")
     private String HEADER_STRING;
 
-    @Value("Bearer")
+    @Value("${jwt.token.prefix}")
     private String TOKEN_PREFIX;
 
     private final UserDetailsService userDetailsService;
@@ -36,13 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-        return path.startsWith("/api/auth/");
-    }
-
-    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        String path = request.getServletPath();
+        if (path.startsWith("/api/auth/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         String header = request.getHeader(HEADER_STRING);
         String username = null;
         String authToken = null;
