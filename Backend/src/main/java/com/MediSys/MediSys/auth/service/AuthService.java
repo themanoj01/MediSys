@@ -42,9 +42,10 @@ public class AuthService {
 
         String token = tokenProvider.generateToken(authentication);
         String role = user.getRole().getName();
+        Long userId = user.getId();
 
         return new AuthResponse(
-                token, role
+                token, role, userId
         );
     }
 

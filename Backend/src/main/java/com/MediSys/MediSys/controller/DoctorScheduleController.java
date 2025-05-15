@@ -19,7 +19,7 @@ public class DoctorScheduleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     public DoctorSchedule createSchedule(@Valid @RequestBody DoctorScheduleDto dto) {
         return doctorScheduleService.createSchedule(dto);
     }
@@ -42,13 +42,13 @@ public class DoctorScheduleController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     public DoctorSchedule updateSchedule(@PathVariable Long id, @Valid @RequestBody DoctorScheduleDto dto) {
         return doctorScheduleService.updateSchedule(id, dto);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     public void deleteSchedule(@PathVariable Long id) {
         doctorScheduleService.deleteSchedule(id);
     }
