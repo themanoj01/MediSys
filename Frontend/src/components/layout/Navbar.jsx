@@ -132,7 +132,7 @@ const Navbar = () => {
             )}
             {userRole === "DOCTOR" && (
               <Link
-                to="/doctor-dashboard"
+                to="/doctor/dashboard"
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 onClick={closeNavbar}
               >
@@ -141,7 +141,7 @@ const Navbar = () => {
             )}
             {userRole === "ADMIN" && (
               <Link
-                to="/admin-dashboard"
+                to="/admin/dashboard"
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 onClick={closeNavbar}
               >

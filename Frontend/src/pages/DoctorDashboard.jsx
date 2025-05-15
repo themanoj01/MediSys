@@ -1,398 +1,536 @@
-import React, { useState } from 'react';
-import { 
-  Users, 
-  CalendarDays, 
-  Clock, 
-  CheckCircle2,
-  ClipboardList,
-  Settings,
-  Bell,
-  LogOut
-} from 'lucide-react';
-import { Card } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import { bookings } from '../lib/data';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { useNavigate } from "react-router-dom";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend
+);
 
 const DoctorDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [currentView, setCurrentView] = useState('today');
-  
-  // Fake doctor data
-  const doctorData = {
-    id: "d1",
-    name: "Dr. Sarah Johnson",
-    specialty: "Cardiology",
-    appointments: {
-      today: 8,
-      tomorrow: 6,
-      upcoming: 15,
-      total: 120,
-      completed: 98
-    },
-    patients: {
-      total: 256,
-      new: 12
-    },
-    schedule: {
-      start: "09:00 AM",
-      end: "05:00 PM",
-      breaks: [
-        { start: "12:00 PM", end: "01:00 PM", label: "Lunch" }
-      ]
-    },
-    notifications: 3
+  const [stats, setStats] = useState({
+    todayAppointments: 0,
+    pendingAppointments: 0,
+    totalPatients: 0,
+  });
+  const [appointments, setAppointments] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [doctorId, setDoctorId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [scheduleForm, setScheduleForm] = useState({
+    dayOfWeek: "",
+    startTime: "",
+    endTime: "",
+  });
+  const [editingScheduleId, setEditingScheduleId] = useState(null);
+  const token = localStorage.getItem("jwtToken");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // Fetch current doctor
+      const doctorRes = await axios.get(
+        "http://localhost:8090/api/doctors/me",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const doctor = doctorRes.data;
+      setDoctorId(doctor.id);
+
+      // Fetch appointments
+      const appointmentsRes = await axios.get(
+        "http://localhost:8090/api/appointments",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const doctorAppointments = appointmentsRes.data.filter(
+        (appt) => appt.doctor.id === doctor.id
+      );
+      setAppointments(doctorAppointments.slice(0, 5));
+
+      // Fetch schedules
+      const schedulesRes = await axios.get(
+        "http://localhost:8090/api/doctor-schedules",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const doctorSchedules = schedulesRes.data.filter(
+        (sched) => sched.doctor.id === doctor.id
+      );
+      setSchedules(doctorSchedules);
+
+      // Calculate stats
+      const today = new Date().toDateString();
+      setStats({
+        todayAppointments: doctorAppointments.filter(
+          (appt) => new Date(appt.appointmentDateTime).toDateString() === today
+        ).length,
+        pendingAppointments: doctorAppointments.filter(
+          (appt) => appt.status === "SCHEDULED"
+        ).length,
+        totalPatients: new Set(
+          doctorAppointments.map((appt) => appt.patient.id)
+        ).size,
+      });
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setError("Unauthorized: Please log in as a doctor.");
+      } else {
+        setError(err.response?.data?.message || "Failed to fetch data");
+      }
+      // Mock data for testing
+      setDoctorId(1);
+      setAppointments([
+        {
+          id: 1,
+          patient: { id: 1, fullName: "John Doe" },
+          doctor: { id: 1 },
+          appointmentDateTime: "2025-05-15T10:00:00",
+          status: "SCHEDULED",
+          createdAt: "2025-05-14T08:00:00",
+        },
+        {
+          id: 2,
+          patient: { id: 2, fullName: "Jane Smith" },
+          doctor: { id: 1 },
+          appointmentDateTime: "2025-05-16T12:00:00",
+          status: "SCHEDULED",
+          createdAt: "2025-05-14T09:00:00",
+        },
+      ]);
+      setSchedules([
+        {
+          id: 1,
+          doctor: { id: 1 },
+          dayOfWeek: "MONDAY",
+          startTime: "09:00",
+          endTime: "17:00",
+        },
+        {
+          id: 2,
+          doctor: { id: 1 },
+          dayOfWeek: "TUESDAY",
+          startTime: "10:00",
+          endTime: "18:00",
+        },
+      ]);
+      setStats({
+        todayAppointments: 1,
+        pendingAppointments: 2,
+        totalPatients: 2,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  // Today's appointments - derived from the bookings data where the doctor is Dr. Sarah Johnson
-  const todaysAppointments = bookings
-    .filter(booking => booking.doctorName === "Dr. Sarah Johnson")
-    .map((booking, index) => ({
-      ...booking,
-      patientName: `Patient ${index + 1}`,
-      patientId: `P${100 + index}`,
-      reason: "Regular checkup"
-    }));
-  
-  const getAppointmentsForView = () => {
-    // In a real app, this would filter by date
-    return todaysAppointments;
+
+  // Handle Schedule Form
+  const handleScheduleInputChange = (e) => {
+    const { name, value } = e.target;
+    setScheduleForm({ ...scheduleForm, [name]: value });
   };
-  
+
+  const handleScheduleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const scheduleData = {
+        doctorId: doctorId,
+        dayOfWeek: scheduleForm.dayOfWeek,
+        startTime: scheduleForm.startTime,
+        endTime: scheduleForm.endTime,
+        slotDuration: 30,
+      };
+      if (editingScheduleId) {
+        // Update schedule
+        await axios.put(
+          `http://localhost:8090/api/doctor-schedules/${editingScheduleId}`,
+          scheduleData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        // Create schedule
+        await axios.post(
+          "http://localhost:8090/api/doctor-schedules",
+          scheduleData,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+      }
+      setScheduleForm({ dayOfWeek: "", startTime: "", endTime: "" });
+      setEditingScheduleId(null);
+      fetchData(); // Refresh schedules
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save schedule");
+    }
+  };
+
+  const handleEditSchedule = (schedule) => {
+    setScheduleForm({
+      dayOfWeek: schedule.dayOfWeek,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+    });
+    setEditingScheduleId(schedule.id);
+  };
+
+  const handleDeleteSchedule = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8090/api/doctor-schedules/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchData(); // Refresh schedules
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete schedule");
+    }
+  };
+
+  // Logout
+  const handleLogout = () => {
+    localStorage.removeItem("jwtToken");
+    navigate("/login");
+  };
+
+  // Line Chart: Appointment Trend (7 days)
+  const getChartData = () => {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+    const filtered = appointments.filter(
+      (appt) => new Date(appt.createdAt) >= startDate
+    );
+
+    const grouped = filtered.reduce((acc, appt) => {
+      const date = new Date(appt.createdAt).toISOString().split("T")[0];
+      acc[date] = (acc[date] || 0) + 1;
+      return acc;
+    }, {});
+
+    const labels = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      labels.push(date.toISOString().split("T")[0]);
+    }
+
+    const data = labels.map((date) => grouped[date] || 0);
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Appointments",
+          data,
+          borderColor: "#4f46e5",
+          backgroundColor: "rgba(79, 70, 229, 0.2)",
+          fill: true,
+          tension: 0.4,
+        },
+      ],
+    };
+  };
+
+  const lineChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: "top" },
+      tooltip: { enabled: true },
+    },
+    scales: {
+      y: { beginAtZero: true, title: { display: true, text: "Appointments" } },
+      x: { title: { display: true, text: "Date" } },
+    },
+  };
+
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* Doctor Header */}
-      <header className="bg-white border-b border-gray-200 py-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">Doctor Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Bell className="h-6 w-6 text-gray-500 cursor-pointer hover:text-primary" />
-              {doctorData.notifications > 0 && (
-                <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
-                  {doctorData.notifications}
-                </span>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Doctor Dashboard</h1>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors shadow-md"
+          >
+            Logout
+          </button>
+        </div>
+
+        {error && (
+          <div
+            className="p-4 mb-6 bg-red-100 border-l-4 border-red-500 text-red-700"
+            role="alert"
+          >
+            {error}
+          </div>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {[
+            {
+              title: "Today's Appointments",
+              value: stats.todayAppointments,
+              icon: "📅",
+            },
+            {
+              title: "Pending Appointments",
+              value: stats.pendingAppointments,
+              icon: "⏳",
+            },
+            { title: "Total Patients", value: stats.totalPatients, icon: "👥" },
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4 hover:shadow-xl transition-shadow"
+            >
+              <div className="text-3xl">{stat.icon}</div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-600">
+                  {stat.title}
+                </h3>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {loading ? "Loading..." : stat.value}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Upcoming Appointments Table */}
+        <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Upcoming Appointments
+          </h2>
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : appointments.length > 0 ? (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600">
+                    Patient
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600">
+                    Date/Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map((appt, index) => (
+                  <tr
+                    key={appt.id}
+                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {appt.patient.fullName}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {new Date(appt.appointmentDateTime).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {appt.status}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-gray-600 text-center py-4">
+              No appointments available.
+            </p>
+          )}
+        </div>
+        {/* Doctor Schedule Section */}
+        <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            My Schedule
+          </h2>
+          {/* Schedule Form */}
+          <form onSubmit={handleScheduleSubmit} className="mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Day of Week
+                </label>
+                <select
+                  name="dayOfWeek"
+                  value={scheduleForm.dayOfWeek}
+                  onChange={handleScheduleInputChange}
+                  className="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                >
+                  <option value="">Select Day</option>
+                  {[
+                    "MONDAY",
+                    "TUESDAY",
+                    "WEDNESDAY",
+                    "THURSDAY",
+                    "FRIDAY",
+                    "SATURDAY",
+                    "SUNDAY",
+                  ].map((day) => (
+                    <option key={day} value={day}>
+                      {day}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  name="startTime"
+                  value={scheduleForm.startTime}
+                  onChange={handleScheduleInputChange}
+                  className="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  name="endTime"
+                  value={scheduleForm.endTime}
+                  onChange={handleScheduleInputChange}
+                  className="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <button
+                type="submit"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                {editingScheduleId ? "Update Schedule" : "Add Schedule"}
+              </button>
+              {editingScheduleId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScheduleForm({
+                      dayOfWeek: "",
+                      startTime: "",
+                      endTime: "",
+                    });
+                    setEditingScheduleId(null);
+                  }}
+                  className="ml-4 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
               )}
             </div>
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">
-                {doctorData.name.charAt(0)}
-              </div>
-              <span className="font-medium text-gray-700">{doctorData.name}</span>
+          </form>
+          {/* Schedule Table */}
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
             </div>
-          </div>
+          ) : schedules.length > 0 ? (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600">
+                    Day of Week
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600">
+                    Start Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600">
+                    End Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {schedules.map((schedule, index) => (
+                  <tr
+                    key={schedule.id}
+                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {schedule.dayOfWeek}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {schedule.startTime}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {schedule.endTime}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        onClick={() => handleEditSchedule(schedule)}
+                        className="text-indigo-600 hover:text-indigo-800 mr-4"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSchedule(schedule.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-gray-600 text-center py-4">
+              No schedules available.
+            </p>
+          )}
         </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <div className="ml-4">
-                <h2 className="text-xs font-medium text-gray-500 uppercase">Total Patients</h2>
-                <p className="text-xl font-bold text-gray-900">{doctorData.patients.total}</p>
-                <p className="text-sm text-green-600">+{doctorData.patients.new} new this month</p>
-              </div>
+        {/* Line Chart: Appointment Trend */}
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Appointment Trend (Last 7 Days)
+          </h2>
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
             </div>
-          </Card>
-          
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CalendarDays className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <h2 className="text-xs font-medium text-gray-500 uppercase">Today's Appointments</h2>
-                <p className="text-xl font-bold text-gray-900">{doctorData.appointments.today}</p>
-                <p className="text-sm text-blue-600">{doctorData.appointments.tomorrow} scheduled for tomorrow</p>
-              </div>
+          ) : appointments.length > 0 ? (
+            <div className="h-80">
+              <Line data={getChartData()} options={lineChartOptions} />
             </div>
-          </Card>
-          
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <h2 className="text-xs font-medium text-gray-500 uppercase">Completed Appointments</h2>
-                <p className="text-xl font-bold text-gray-900">{doctorData.appointments.completed}</p>
-                <p className="text-sm text-gray-500">Total: {doctorData.appointments.total}</p>
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <h2 className="text-xs font-medium text-gray-500 uppercase">Work Hours</h2>
-                <p className="text-xl font-bold text-gray-900">{doctorData.schedule.start} - {doctorData.schedule.end}</p>
-                <p className="text-sm text-gray-500">Break: {doctorData.schedule.breaks[0].start} - {doctorData.schedule.breaks[0].end}</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-        
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="p-4">
-              <nav className="space-y-1">
-                <button
-                  className={`w-full flex items-center px-4 py-3 text-left rounded-lg ${
-                    activeTab === 'overview' 
-                      ? 'bg-primary text-white' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setActiveTab('overview')}
-                >
-                  <ClipboardList className={`h-5 w-5 ${activeTab === 'overview' ? 'text-white' : 'text-gray-500'} mr-3`} />
-                  <span>Dashboard</span>
-                </button>
-                
-                <button
-                  className={`w-full flex items-center px-4 py-3 text-left rounded-lg ${
-                    activeTab === 'appointments' 
-                      ? 'bg-primary text-white' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setActiveTab('appointments')}
-                >
-                  <CalendarDays className={`h-5 w-5 ${activeTab === 'appointments' ? 'text-white' : 'text-gray-500'} mr-3`} />
-                  <span>Appointments</span>
-                </button>
-                
-                <button
-                  className={`w-full flex items-center px-4 py-3 text-left rounded-lg ${
-                    activeTab === 'patients' 
-                      ? 'bg-primary text-white' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setActiveTab('patients')}
-                >
-                  <Users className={`h-5 w-5 ${activeTab === 'patients' ? 'text-white' : 'text-gray-500'} mr-3`} />
-                  <span>Patients</span>
-                </button>
-                
-                <button
-                  className={`w-full flex items-center px-4 py-3 text-left rounded-lg ${
-                    activeTab === 'settings' 
-                      ? 'bg-primary text-white' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setActiveTab('settings')}
-                >
-                  <Settings className={`h-5 w-5 ${activeTab === 'settings' ? 'text-white' : 'text-gray-500'} mr-3`} />
-                  <span>Settings</span>
-                </button>
-                
-                <button
-                  className="w-full flex items-center px-4 py-3 text-left rounded-lg text-red-600 hover:bg-red-50"
-                >
-                  <LogOut className="h-5 w-5 text-red-500 mr-3" />
-                  <span>Logout</span>
-                </button>
-              </nav>
-              
-              {/* Working Hours Card */}
-              <div className="mt-6 p-4 border border-gray-200 rounded-lg">
-                <h3 className="font-medium text-gray-900 mb-3">Today's Schedule</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Working Hours:</span>
-                    <span className="font-medium">{doctorData.schedule.start} - {doctorData.schedule.end}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Lunch Break:</span>
-                    <span className="font-medium">{doctorData.schedule.breaks[0].start} - {doctorData.schedule.breaks[0].end}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Total Appointments:</span>
-                    <span className="font-medium">{doctorData.appointments.today}</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-          
-          {/* Main Content Area */}
-          <div className="lg:col-span-3">
-            <Card className="p-6">
-              <Tabs defaultValue="today" onValueChange={setCurrentView} value={currentView}>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">Appointments</h2>
-                  <TabsList>
-                    <TabsTrigger value="today">Today</TabsTrigger>
-                    <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                    <TabsTrigger value="completed">Completed</TabsTrigger>
-                  </TabsList>
-                </div>
-                
-                <TabsContent value="today" className="mt-0">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left">
-                            Patient
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left">
-                            Time
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left">
-                            Reason
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left">
-                            Status
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-left">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {getAppointmentsForView().map((appointment, index) => (
-                          <tr key={index}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {appointment.patientName}
-                              <div className="text-xs text-gray-500">ID: {appointment.patientId}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {appointment.time}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {appointment.reason}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                appointment.status === 'Confirmed' ? 'bg-green-100 text-green-800' :
-                                appointment.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-blue-100 text-blue-800'
-                              }`}>
-                                {appointment.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <div className="flex space-x-2">
-                                <Button size="sm" variant="outline" className="text-xs">
-                                  View
-                                </Button>
-                                <Button size="sm" className="text-xs">
-                                  Start
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="upcoming">
-                  <div className="text-center py-10">
-                    <h3 className="text-lg font-medium text-gray-500">Upcoming Appointments Tab</h3>
-                    <p className="text-gray-400 mt-2">This is a placeholder for upcoming appointments view</p>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="completed">
-                  <div className="text-center py-10">
-                    <h3 className="text-lg font-medium text-gray-500">Completed Appointments Tab</h3>
-                    <p className="text-gray-400 mt-2">This is a placeholder for completed appointments view</p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </Card>
-            
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="p-6">
-                <h3 className="font-bold text-lg text-gray-900 mb-4">Recent Patients</h3>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((_, index) => (
-                    <div key={index} className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0"></div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">Patient {index + 1}</p>
-                        <p className="text-xs text-gray-500">Last visit: {index === 0 ? 'Today' : `${index} days ago`}</p>
-                      </div>
-                      <Button variant="ghost" size="sm" className="ml-auto">
-                        View
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Button variant="outline" className="w-full">View All Patients</Button>
-                </div>
-              </Card>
-              
-              <Card className="p-6">
-                <h3 className="font-bold text-lg text-gray-900 mb-4">Notifications</h3>
-                {doctorData.notifications > 0 ? (
-                  <div className="space-y-4">
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <CalendarDays className="h-5 w-5 text-blue-500" />
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm text-blue-700">
-                            New appointment request from Patient 4
-                          </p>
-                          <p className="text-xs text-blue-500 mt-1">10 minutes ago</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 bg-yellow-50 rounded-lg">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <Clock className="h-5 w-5 text-yellow-500" />
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm text-yellow-700">
-                            Reminder: Staff meeting at 4:00 PM
-                          </p>
-                          <p className="text-xs text-yellow-500 mt-1">1 hour ago</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm text-green-700">
-                            Lab results for Patient 2 are ready
-                          </p>
-                          <p className="text-xs text-green-500 mt-1">3 hours ago</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Bell className="h-8 w-8 text-gray-300 mx-auto" />
-                    <p className="mt-2 text-gray-500">No new notifications</p>
-                  </div>
-                )}
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Button variant="outline" className="w-full">View All Notifications</Button>
-                </div>
-              </Card>
-            </div>
-          </div>
+          ) : (
+            <p className="text-gray-600 text-center py-4">
+              No appointment data available.
+            </p>
+          )}
         </div>
       </div>
     </div>

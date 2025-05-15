@@ -1,25 +1,44 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Stethoscope, Clock, Building2, Users, ArrowRight } from "lucide-react";
 import ServiceCard from "../components/ui/ServiceCard";
 import DoctorCard from "../components/ui/DoctorCard";
-import { services, doctors, faqs } from "../lib/data";
+import { services, faqs } from "../lib/data";
 import FAQItem from "../components/ui/FAQItem";
+import axios from "axios";
 
 const Home = () => {
+  // State for doctors
+  const [doctors, setDoctors] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [error, setError] = useState("");
+
   // Get featured services (first 3)
   const featuredServices = services.slice(0, 3);
-
-  // Get featured doctors (first 4)
-  const featuredDoctors = doctors.slice(0, 4);
 
   // Get featured FAQs (first 3)
   const featuredFaqs = faqs.slice(0, 3);
 
+  // Fetch doctors from API
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      setLoadingDoctors(true);
+      try {
+        const response = await axios.get("http://localhost:8090/api/doctors");
+        setDoctors(response.data.slice(0, 4)); // Get first 4 doctors
+      } catch (err) {
+        setError("Failed to fetch doctors");
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+
+    fetchDoctors();
+  }, []);
+
   return (
     <>
-      {/* Hero Section */}
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-blue-900 to-blue-700 text-white">
         <div className="absolute inset-0 bg-black opacity-20"></div>
@@ -181,20 +200,25 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredDoctors.map((doctor) => (
-              <DoctorCard
-                key={doctor.id}
-                id={doctor.id}
-                name={doctor.name}
-                specialization={doctor.specialization}
-                ahpraNumber={doctor.ahpraNumber}
-                experience={doctor.experience}
-                imageUrl={doctor.imageUrl}
-                description={doctor.description}
-              />
-            ))}
-          </div>
+          {loadingDoctors ? (
+            <p className="text-center text-gray-600">Loading doctors...</p>
+          ) : error ? (
+            <p className="text-center text-red-600">{error}</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {doctors.map((doctor) => (
+                <DoctorCard
+                  key={doctor.id}
+                  id={doctor.id}
+                  name={doctor.fullName}
+                  specialization={doctor.specialization}
+                  ahpraNumber={doctor.registrationNumber}
+                  experience={doctor.yearsOfExperience}
+                  imageUrl={doctor.imageUrl}
+                />
+              ))}
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Link to="/doctors">
