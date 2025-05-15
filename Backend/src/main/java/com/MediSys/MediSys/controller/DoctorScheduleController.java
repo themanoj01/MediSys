@@ -24,6 +24,11 @@ public class DoctorScheduleController {
         return doctorScheduleService.createSchedule(dto);
     }
 
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<DoctorSchedule> getAllSchedules() {
+        return doctorScheduleService.getAllSchedules();
+    }
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public DoctorSchedule getScheduleById(@PathVariable Long id) {

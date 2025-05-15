@@ -31,4 +31,9 @@ public class ResourceBookingController {
             @RequestParam LocalDateTime end) {
         return resourceBookingService.getAvailableResourceSlots(resourceId, start, end);
     }
+
+    @GetMapping()
+    public List<ResourceBooking> getAllResourceBookings() {
+        return resourceBookingService.getAllResourceBookings();
+    }
 }

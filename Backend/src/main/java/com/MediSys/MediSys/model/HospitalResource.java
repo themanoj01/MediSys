@@ -20,4 +20,7 @@ public class HospitalResource {
     private String name; // e.g., Oxygen Cylinder, Wheelchair
     private String description;
 
+    private int quantity;
+    private double price;
+    private String image;
 }

@@ -90,4 +90,8 @@ public class RoomBookingService {
     private boolean checkRoomAvailability(HospitalRoom room, LocalDateTime start, LocalDateTime end) {
         return roomBookingRepository.findByRoomAndStartDateTimeBetweenAndStatus(room, start, end, BookingStatus.BOOKED).isEmpty();
     }
+
+    public List<RoomBooking> getAllRoomBookings() {
+        return roomBookingRepository.findAll();
+    }
 }

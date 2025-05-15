@@ -30,4 +30,9 @@ public class RoomBookingController {
             @RequestParam LocalDateTime end) {
         return roomBookingService.getAvailableRoomSlots(roomId, start, end);
     }
+
+    @GetMapping
+    public List<RoomBooking> getRoomBookings(){
+        return roomBookingService.getAllRoomBookings();
+    }
 }
