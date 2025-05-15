@@ -20,4 +20,7 @@ public class HospitalRoom {
     private String roomNumber;
     @Column(nullable = false)
     private String type;
+
+    private Double price;
+    private String roomPicture;
 }

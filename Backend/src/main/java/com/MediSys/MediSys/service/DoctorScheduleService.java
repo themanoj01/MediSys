@@ -107,4 +107,8 @@ public class DoctorScheduleService {
         doctorScheduleRepository.deleteById(id);
         logger.info("Schedule deleted successfully: {}", id);
     }
+
+    public List<DoctorSchedule> getAllSchedules() {
+        return doctorScheduleRepository.findAll();
+    }
 }

@@ -23,4 +23,13 @@ public class FileStorageService {
             throw new RuntimeException("Failed to store file", e);
         }
     }
+    public void deleteFile(String filePath) {
+        if (filePath != null && !filePath.isEmpty()) {
+            try {
+                Files.deleteIfExists(Paths.get(filePath.replace("/uploads/", UPLOAD_DIR)));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to delete file: " + filePath, e);
+            }
+        }
+    }
 }

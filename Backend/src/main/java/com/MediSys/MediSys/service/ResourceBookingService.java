@@ -90,4 +90,8 @@ public class ResourceBookingService {
     private boolean checkResourceAvailability(HospitalResource resource, LocalDateTime start, LocalDateTime end) {
         return resourceBookingRepository.findByResourceAndStartDateTimeBetweenAndStatus(resource, start, end, BookingStatus.BOOKED).isEmpty();
     }
+
+    public List<ResourceBooking> getAllResourceBookings() {
+        return resourceBookingRepository.findAll();
+    }
 }
