@@ -44,12 +44,9 @@ const DoctorCard = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-gray-600 line-clamp-3">
-          {description ||
-            `${name} is a specialist in ${specialization} with ${experience} years of experience providing excellent patient care.`}
-        </p>
+        <p className="text-sm text-gray-600 line-clamp-3">{description}</p>
         <div className="mt-3">
-          <p className="text-xs text-gray-500">AHPRA: {ahpraNumber}</p>
+          <p className="text-xs text-gray-500">Reg#: {ahpraNumber}</p>
         </div>
       </CardContent>
       <CardFooter className="pt-2">

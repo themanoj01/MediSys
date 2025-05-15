@@ -15,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
+@CrossOrigin
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
@@ -48,6 +49,12 @@ public class AppointmentController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Appointment>> getAllAppointments() {
         return ResponseEntity.ok(appointmentService.getAllAppointments());
+    }
+
+    //http://localhost:8090/api/appointments/get-by-doctor/1
+    @GetMapping("/get-by-doctor/{doctorId}")
+    public ResponseEntity<List<Appointment>> getByDoctorId(@PathVariable Long doctorId) {
+        return ResponseEntity.ok(appointmentService.findByDoctor(doctorId));
     }
 
     @PutMapping("/{id}")
