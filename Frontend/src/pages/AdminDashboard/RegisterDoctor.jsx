@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { X } from "lucide-react";
+import toast from "react-hot-toast";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "../../components/ui/button";
 
 const Doctors = () => {
   const [form, setForm] = useState({
@@ -17,6 +21,7 @@ const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
   const [editDoctor, setEditDoctor] = useState(null);
   const [editImage, setEditImage] = useState(null);
+  const [deleteDoctorId, setDeleteDoctorId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,9 +37,11 @@ const Doctors = () => {
       const response = await axios.get("http://localhost:8090/api/doctors", {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log("Doctors fetched:", response.data);
       setDoctors(response.data);
     } catch (err) {
       setError("Failed to fetch doctors");
+      toast.error("Failed to fetch doctors");
     } finally {
       setLoading(false);
     }
@@ -85,10 +92,13 @@ const Doctors = () => {
         }
       );
       setSuccess("Doctor added successfully!");
+      toast.success("Doctor added successfully!");
       fetchDoctors();
       resetForm();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to add doctor");
+      const errorMsg = err.response?.data?.message || "Failed to add doctor";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -121,33 +131,55 @@ const Doctors = () => {
         }
       );
       setSuccess("Doctor updated successfully!");
+      toast.success("Doctor updated successfully!");
       fetchDoctors();
       setEditDoctor(null);
       setEditImage(null);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update doctor");
+      const errorMsg = err.response?.data?.message || "Failed to update doctor";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (doctor) => {
-    setEditDoctor({
-      id: doctor.id,
-      fullName: doctor.fullName,
-      email: doctor.email,
-      password: "", // Password not editable
-      phone: doctor.phone,
-      specialization: doctor.specialization,
-      registrationNumber: doctor.registrationNumber,
-      yearsOfExperience: doctor.yearsOfExperience.toString(),
-      gender: doctor.gender,
-    });
-    setEditImage(null);
+    console.log("Editing doctor:", doctor);
+    try {
+      if (!doctor?.id) {
+        throw new Error("Invalid doctor data: ID missing");
+      }
+      setEditDoctor({
+        id: doctor.id,
+        fullName: doctor.fullName || "",
+        email: doctor.email || "",
+        password: "",
+        phone: doctor.phone || "",
+        specialization: doctor.specialization || "",
+        registrationNumber: doctor.registrationNumber || "",
+        yearsOfExperience: doctor.yearsOfExperience?.toString() || "",
+        gender: doctor.gender || "",
+      });
+      setEditImage(null);
+      console.log("Edit modal set with:", {
+        id: doctor.id,
+        fullName: doctor.fullName,
+        email: doctor.email,
+        phone: doctor.phone,
+        specialization: doctor.specialization,
+        registrationNumber: doctor.registrationNumber,
+        yearsOfExperience: doctor.yearsOfExperience?.toString(),
+        gender: doctor.gender,
+      });
+    } catch (err) {
+      console.error("Error in handleEdit:", err.message);
+      setError("Failed to load doctor for editing");
+      toast.error("Failed to load doctor for editing");
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this doctor?")) return;
     setError("");
     setSuccess("");
     setLoading(true);
@@ -157,12 +189,25 @@ const Doctors = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSuccess("Doctor deleted successfully!");
+      toast.success("Doctor deleted successfully!");
       fetchDoctors();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete doctor");
+      const errorMsg = err.response?.data?.message || "Failed to delete doctor";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
+      setDeleteDoctorId(null);
     }
+  };
+
+  const openDeleteModal = (id) => {
+    console.log("Opening delete modal for doctor ID:", id);
+    setDeleteDoctorId(id);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteDoctorId(null);
   };
 
   const resetForm = () => {
@@ -200,7 +245,6 @@ const Doctors = () => {
           </div>
         )}
 
-        {/* Add Doctor Form */}
         <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
             Add New Doctor
@@ -345,7 +389,6 @@ const Doctors = () => {
           </form>
         </div>
 
-        {/* Doctors Table */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
             Registered Doctors
@@ -433,14 +476,20 @@ const Doctors = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex space-x-3">
                           <button
-                            onClick={() => handleEdit(doctor)}
+                            onClick={() => {
+                              console.log(
+                                "Edit button clicked for doctor:",
+                                doctor.id
+                              );
+                              handleEdit(doctor);
+                            }}
                             className="text-indigo-600 hover:text-indigo-800 flex items-center"
                             title="Edit"
                           >
                             <FaEdit className="h-5 w-5" />
                           </button>
                           <button
-                            onClick={() => handleDelete(doctor.id)}
+                            onClick={() => openDeleteModal(doctor.id)}
                             className="text-red-600 hover:text-red-800 flex items-center"
                             title="Delete"
                           >
@@ -456,143 +505,196 @@ const Doctors = () => {
           )}
         </div>
 
-        {/* Edit Modal */}
         {editDoctor && (
           <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Edit Doctor
-              </h2>
-              <form onSubmit={handleEditSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={editDoctor.fullName}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={editDoctor.email}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Phone
-                  </label>
-                  <input
-                    type="text"
-                    name="phone"
-                    value={editDoctor.phone}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Specialization
-                  </label>
-                  <input
-                    type="text"
-                    name="specialization"
-                    value={editDoctor.specialization}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Registration Number
-                  </label>
-                  <input
-                    type="text"
-                    name="registrationNumber"
-                    value={editDoctor.registrationNumber}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Years of Experience
-                  </label>
-                  <input
-                    type="number"
-                    name="yearsOfExperience"
-                    value={editDoctor.yearsOfExperience}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Gender
-                  </label>
-                  <select
-                    name="gender"
-                    value={editDoctor.gender}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Profile Image
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleEditImageChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div className="flex space-x-4">
+            <Card className="bg-white rounded-xl shadow-2xl max-w-3xl w-full">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Edit Doctor
+                  </h2>
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className={`flex-1 p-3 rounded-lg text-white font-semibold ${
-                      loading
-                        ? "bg-indigo-400 cursor-not-allowed"
-                        : "bg-indigo-600 hover:bg-indigo-700"
-                    } transition`}
-                  >
-                    {loading ? "Updating..." : "Update Doctor"}
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setEditDoctor(null)}
-                    className="flex-1 p-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition"
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <form
+                  onSubmit={handleEditSubmit}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={editDoctor.fullName}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={editDoctor.email}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Phone
+                    </label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={editDoctor.phone}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Specialization
+                    </label>
+                    <input
+                      type="text"
+                      name="specialization"
+                      value={editDoctor.specialization}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Registration Number
+                    </label>
+                    <input
+                      type="text"
+                      name="registrationNumber"
+                      value={editDoctor.registrationNumber}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Years of Experience
+                    </label>
+                    <input
+                      type="number"
+                      name="yearsOfExperience"
+                      value={editDoctor.yearsOfExperience}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      min="0"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Gender
+                    </label>
+                    <select
+                      name="gender"
+                      value={editDoctor.gender}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Profile Image
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEditImageChange}
+                      className="mt-1 block w-full p-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div className="md:col-span-2 flex gap-3">
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className={`flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold p-3 rounded-lg ${
+                        loading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {loading ? "Updating..." : "Update Doctor"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold p-3 rounded-lg"
+                      onClick={() => setEditDoctor(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {deleteDoctorId && (
+          <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Confirm Deletion
+                  </h2>
+                  <button
+                    onClick={closeDeleteModal}
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <p className="text-gray-600 mb-4">
+                  Are you sure you want to delete this doctor? This action
+                  cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => handleDelete(deleteDoctorId)}
+                    disabled={loading}
+                    className={`flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold p-3 rounded-lg ${
+                      loading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    {loading ? "Deleting..." : "Delete"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold p-3 rounded-lg"
+                    onClick={closeDeleteModal}
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
-              </form>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
