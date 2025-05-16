@@ -25,7 +25,7 @@ public class DoctorScheduleController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     public List<DoctorSchedule> getAllSchedules() {
         return doctorScheduleService.getAllSchedules();
     }

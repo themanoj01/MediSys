@@ -3,22 +3,28 @@ package com.MediSys.MediSys.controller;
 import com.MediSys.MediSys.dto.HospitalResourceDto;
 import com.MediSys.MediSys.model.HospitalResource;
 import com.MediSys.MediSys.service.HospitalResourceService;
+import com.MediSys.MediSys.service.ResourceBookingService;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/resources")
 public class HospitalResourceController {
     private final HospitalResourceService hospitalResourceService;
+    private final ResourceBookingService resourceBookingService;
 
-    public HospitalResourceController(HospitalResourceService hospitalResourceService) {
+    public HospitalResourceController(HospitalResourceService hospitalResourceService, ResourceBookingService resourceBookingService) {
         this.hospitalResourceService = hospitalResourceService;
+        this.resourceBookingService = resourceBookingService;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -36,7 +42,6 @@ public class HospitalResourceController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public List<HospitalResource> getAllResources() {
         return hospitalResourceService.getAllResources();
     }
@@ -55,4 +60,6 @@ public class HospitalResourceController {
     public void deleteResource(@PathVariable Long id) {
         hospitalResourceService.deleteResource(id);
     }
+
+
 }

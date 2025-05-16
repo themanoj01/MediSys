@@ -60,7 +60,7 @@ public class DoctorController {
 
 
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('PATIENT')")
     public ResponseEntity<Doctor> updateDoctor(
             @PathVariable Long id,
             @Valid @RequestPart("doctor") RegisterDoctorDto dto,

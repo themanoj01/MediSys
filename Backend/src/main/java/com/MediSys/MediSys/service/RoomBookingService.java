@@ -6,15 +6,18 @@ import com.MediSys.MediSys.exception.BookingConflictException;
 import com.MediSys.MediSys.exception.ResourceNotFoundException;
 import com.MediSys.MediSys.model.Appointment;
 import com.MediSys.MediSys.model.HospitalRoom;
+import com.MediSys.MediSys.model.Patient;
 import com.MediSys.MediSys.model.RoomBooking;
 import com.MediSys.MediSys.auth.model.User;
 import com.MediSys.MediSys.repository.AppointmentRepository;
 import com.MediSys.MediSys.repository.HospitalRoomRepository;
+import com.MediSys.MediSys.repository.PatientRepository;
 import com.MediSys.MediSys.repository.RoomBookingRepository;
 import com.MediSys.MediSys.auth.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,15 +32,18 @@ public class RoomBookingService {
     private final HospitalRoomRepository hospitalRoomRepository;
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
+    private final PatientRepository patientRepository;
 
     public RoomBookingService(RoomBookingRepository roomBookingRepository,
                               HospitalRoomRepository hospitalRoomRepository,
                               AppointmentRepository appointmentRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              PatientRepository patientRepository) {
         this.roomBookingRepository = roomBookingRepository;
         this.hospitalRoomRepository = hospitalRoomRepository;
         this.appointmentRepository = appointmentRepository;
         this.userRepository = userRepository;
+        this.patientRepository = patientRepository;
     }
 
     @Transactional
@@ -93,5 +99,20 @@ public class RoomBookingService {
 
     public List<RoomBooking> getAllRoomBookings() {
         return roomBookingRepository.findAll();
+    }
+
+    public boolean checkRoomAvailability(Long roomId, LocalDateTime start, LocalDateTime end) {
+        HospitalRoom room = hospitalRoomRepository.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+        return roomBookingRepository.findByRoomAndStartDateTimeBetweenAndStatus(
+                room, start, end, BookingStatus.BOOKED
+        ).isEmpty();
+    }
+
+    public void cancelRoomBooking(Long id) {
+        RoomBooking booking = roomBookingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Room booking not found"));
+        booking.setStatus(BookingStatus.CANCELLED);
+        roomBookingRepository.save(booking);
     }
 }

@@ -10,4 +10,6 @@ import java.util.List;
 
 public interface ResourceBookingRepository extends JpaRepository<ResourceBooking, Long> {
     List<ResourceBooking> findByResourceAndStartDateTimeBetweenAndStatus(HospitalResource resource, LocalDateTime start, LocalDateTime end, BookingStatus bookingStatus);
+
+    List<ResourceBooking> findByEndDateTimeBeforeAndStatus(LocalDateTime now, BookingStatus bookingStatus);
 }
