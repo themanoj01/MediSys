@@ -54,18 +54,18 @@ const Home = () => {
                 dedicated to your well-being.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link to="/appointment">
+                <Link to="/doctors">
                   <Button size="lg" className="font-semibold">
                     Book Appointment
                   </Button>
                 </Link>
-                <Link to="/doctors">
+                <Link to="/contact">
                   <Button
                     size="lg"
                     variant="outline"
                     className="bg-white/10 backdrop-blur-sm border-white text-white hover:bg-white/20 font-semibold"
                   >
-                    Find a Doctor
+                    Get in Touch
                   </Button>
                 </Link>
               </div>
@@ -272,7 +272,7 @@ const Home = () => {
             healthcare for you and your family.
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
-            <Link to="/appointment">
+            <Link to="/doctors">
               <Button
                 size="lg"
                 className="bg-white text-primary hover:bg-gray-100"

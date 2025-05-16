@@ -44,11 +44,12 @@ const Login = () => {
 
       localStorage.setItem("jwtToken", token);
       localStorage.setItem("userRole", role);
+      window.dispatchEvent(new Event("authChange"));
 
       if (role === "ADMIN") {
         navigate("/admin/dashboard");
       } else if (role === "DOCTOR") {
-        navigate("/doctor-dashboard");
+        navigate("/doctor/dashboard");
       } else if (role === "PATIENT") {
         navigate("/");
       } else {

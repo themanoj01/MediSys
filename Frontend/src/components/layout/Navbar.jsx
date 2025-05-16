@@ -6,7 +6,6 @@ import { Button } from "../ui/button";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [patientDropdownOpen, setPatientDropdownOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const location = useLocation();
@@ -33,23 +32,15 @@ const Navbar = () => {
   const toggleNavbar = () => {
     setIsOpen(!isOpen);
     setProfileDropdownOpen(false);
-    setPatientDropdownOpen(false);
   };
 
   const toggleProfileDropdown = () => {
     setProfileDropdownOpen(!profileDropdownOpen);
-    setPatientDropdownOpen(false);
-  };
-
-  const togglePatientDropdown = () => {
-    setPatientDropdownOpen(!patientDropdownOpen);
-    setProfileDropdownOpen(false);
   };
 
   const closeNavbar = () => {
     setIsOpen(false);
     setProfileDropdownOpen(false);
-    setPatientDropdownOpen(false);
   };
 
   const handleLogout = () => {
@@ -96,58 +87,25 @@ const Navbar = () => {
           onClick={toggleProfileDropdown}
         >
           <User className="mr-1 h-4 w-4" />
-          {userRole === "PATIENT"
-            ? "Profile"
-            : userRole === "DOCTOR"
-            ? "Doctor"
-            : "Admin"}
+          Profile
           <ChevronDown className="ml-1 h-4 w-4" />
         </button>
         {profileDropdownOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-[1000]">
-            {userRole === "PATIENT" && (
-              <>
-                <Link
-                  to="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={closeNavbar}
-                >
-                  Profile
-                </Link>
-                <Link
-                  to="/my-bookings"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={closeNavbar}
-                >
-                  My Bookings
-                </Link>
-                <Link
-                  to="/appointment"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={closeNavbar}
-                >
-                  Book Appointment
-                </Link>
-              </>
-            )}
-            {userRole === "DOCTOR" && (
-              <Link
-                to="/doctor/dashboard"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                onClick={closeNavbar}
-              >
-                Doctor Dashboard
-              </Link>
-            )}
-            {userRole === "ADMIN" && (
-              <Link
-                to="/admin/dashboard"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                onClick={closeNavbar}
-              >
-                Admin Dashboard
-              </Link>
-            )}
+            <Link
+              to="/profile"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              onClick={closeNavbar}
+            >
+              My Profile
+            </Link>
+            <Link
+              to="/my-bookings"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              onClick={closeNavbar}
+            >
+              My Bookings
+            </Link>
             <button
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={handleLogout}
@@ -190,58 +148,25 @@ const Navbar = () => {
           onClick={toggleProfileDropdown}
         >
           <User className="mr-2 h-4 w-4" />
-          {userRole === "PATIENT"
-            ? "Profile"
-            : userRole === "DOCTOR"
-            ? "Doctor"
-            : "Admin"}
+          Profile
           <ChevronDown className="ml-2 h-4 w-4" />
         </button>
         {profileDropdownOpen && (
           <div className="pl-4">
-            {userRole === "PATIENT" && (
-              <>
-                <Link
-                  to="/profile"
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
-                  onClick={closeNavbar}
-                >
-                  Profile
-                </Link>
-                <Link
-                  to="/my-bookings"
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
-                  onClick={closeNavbar}
-                >
-                  My Bookings
-                </Link>
-                <Link
-                  to="/appointment"
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
-                  onClick={closeNavbar}
-                >
-                  Book Appointment
-                </Link>
-              </>
-            )}
-            {userRole === "DOCTOR" && (
-              <Link
-                to="/doctor-dashboard"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
-                onClick={closeNavbar}
-              >
-                Doctor Dashboard
-              </Link>
-            )}
-            {userRole === "ADMIN" && (
-              <Link
-                to="/admin-dashboard"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
-                onClick={closeNavbar}
-              >
-                Admin Dashboard
-              </Link>
-            )}
+            <Link
+              to="/profile"
+              className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
+              onClick={closeNavbar}
+            >
+              My Profile
+            </Link>
+            <Link
+              to="/my-bookings"
+              className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
+              onClick={closeNavbar}
+            >
+              My Bookings
+            </Link>
             <button
               className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
               onClick={handleLogout}
@@ -299,47 +224,30 @@ const Navbar = () => {
             >
               Doctors
             </Link>
-            {isAuthenticated && userRole === "PATIENT" && (
-              <div className="relative">
-                <button
-                  className={`text-gray-700 hover:text-primary px-3 py-2 text-sm font-medium flex items-center ${
-                    ["/appointment", "/my-bookings", "/faqs"].includes(
-                      location.pathname
-                    )
-                      ? "text-primary"
-                      : ""
-                  }`}
-                  onClick={togglePatientDropdown}
-                >
-                  Patient <ChevronDown className="ml-1 h-4 w-4" />
-                </button>
-                {patientDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-[1000]">
-                    <Link
-                      to="/appointment"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={closeNavbar}
-                    >
-                      Book Appointment
-                    </Link>
-                    <Link
-                      to="/my-bookings"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={closeNavbar}
-                    >
-                      My Bookings
-                    </Link>
-                    <Link
-                      to="/faqs"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={closeNavbar}
-                    >
-                      FAQs
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
+            <Link
+              to="/rooms"
+              className={`text-gray-700 hover:text-primary px-3 py-2 text-sm font-medium ${
+                location.pathname === "/rooms" ? "text-primary" : ""
+              }`}
+            >
+              Rooms
+            </Link>
+            <Link
+              to="/resources"
+              className={`text-gray-700 hover:text-primary px-3 py-2 text-sm font-medium ${
+                location.pathname === "/resources" ? "text-primary" : ""
+              }`}
+            >
+              Resources
+            </Link>
+            <Link
+              to="/faqs"
+              className={`text-gray-700 hover:text-primary px-3 py-2 text-sm font-medium ${
+                location.pathname === "/faq" ? "text-primary" : ""
+              }`}
+            >
+              FAQ
+            </Link>
             <Link
               to="/contact"
               className={`text-gray-700 hover:text-primary px-3 py-2 text-sm font-medium ${
@@ -414,41 +322,39 @@ const Navbar = () => {
             >
               Doctors
             </Link>
-            {isAuthenticated && userRole === "PATIENT" && (
-              <>
-                <button
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary flex items-center"
-                  onClick={togglePatientDropdown}
-                >
-                  Patient <ChevronDown className="ml-2 h-4 w-4" />
-                </button>
-                {patientDropdownOpen && (
-                  <div className="pl-4">
-                    <Link
-                      to="/appointment"
-                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
-                      onClick={closeNavbar}
-                    >
-                      Book Appointment
-                    </Link>
-                    <Link
-                      to="/my-bookings"
-                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
-                      onClick={closeNavbar}
-                    >
-                      My Bookings
-                    </Link>
-                    <Link
-                      to="/faqs"
-                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary"
-                      onClick={closeNavbar}
-                    >
-                      FAQs
-                    </Link>
-                  </div>
-                )}
-              </>
-            )}
+            <Link
+              to="/rooms"
+              className={`block px-3 py-2 rounded-md text-base font-medium ${
+                location.pathname === "/rooms"
+                  ? "bg-gray-100 text-primary"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-primary"
+              }`}
+              onClick={closeNavbar}
+            >
+              Rooms
+            </Link>
+            <Link
+              to="/resources"
+              className={`block px-3 py-2 rounded-md text-base font-medium ${
+                location.pathname === "/resources"
+                  ? "bg-gray-100 text-primary"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-primary"
+              }`}
+              onClick={closeNavbar}
+            >
+              Resources
+            </Link>
+            <Link
+              to="/faq"
+              className={`block px-3 py-2 rounded-md text-base font-medium ${
+                location.pathname === "/faq"
+                  ? "bg-gray-100 text-primary"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-primary"
+              }`}
+              onClick={closeNavbar}
+            >
+              FAQ
+            </Link>
             <Link
               to="/contact"
               className={`block px-3 py-2 rounded-md text-base font-medium ${

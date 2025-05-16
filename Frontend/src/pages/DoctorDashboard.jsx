@@ -11,6 +11,7 @@ import {
   Legend,
 } from "chart.js";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 ChartJS.register(
   CategoryScale,
@@ -31,6 +32,7 @@ const DoctorDashboard = () => {
   const [schedules, setSchedules] = useState([]);
   const [doctorId, setDoctorId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [operationLoading, setOperationLoading] = useState(false);
   const [error, setError] = useState("");
   const [scheduleForm, setScheduleForm] = useState({
     dayOfWeek: "",
@@ -41,121 +43,121 @@ const DoctorDashboard = () => {
   const token = localStorage.getItem("jwtToken");
   const navigate = useNavigate();
 
+  // Fetch doctor data
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      // Fetch current doctor
-      const doctorRes = await axios.get(
-        "http://localhost:8090/api/doctors/me",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const doctor = doctorRes.data;
-      setDoctorId(doctor.id);
-
-      // Fetch appointments
-      const appointmentsRes = await axios.get(
-        "http://localhost:8090/api/appointments",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const doctorAppointments = appointmentsRes.data.filter(
-        (appt) => appt.doctor.id === doctor.id
-      );
-      setAppointments(doctorAppointments.slice(0, 5));
-
-      // Fetch schedules
-      const schedulesRes = await axios.get(
-        "http://localhost:8090/api/doctor-schedules",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const doctorSchedules = schedulesRes.data.filter(
-        (sched) => sched.doctor.id === doctor.id
-      );
-      setSchedules(doctorSchedules);
-
-      // Calculate stats
-      const today = new Date().toDateString();
-      setStats({
-        todayAppointments: doctorAppointments.filter(
-          (appt) => new Date(appt.appointmentDateTime).toDateString() === today
-        ).length,
-        pendingAppointments: doctorAppointments.filter(
-          (appt) => appt.status === "SCHEDULED"
-        ).length,
-        totalPatients: new Set(
-          doctorAppointments.map((appt) => appt.patient.id)
-        ).size,
-      });
-    } catch (err) {
-      if (err.response?.status === 401) {
-        setError("Unauthorized: Please log in as a doctor.");
-      } else {
-        setError(err.response?.data?.message || "Failed to fetch data");
+    const fetchDoctor = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const doctorRes = await axios.get(
+          "http://localhost:8090/api/doctors/me",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setDoctorId(doctorRes.data.id);
+      } catch (err) {
+        const errorMsg =
+          err.response?.status === 401
+            ? "Unauthorized: Please log in as a doctor."
+            : err.response?.data?.message || "Failed to fetch doctor data";
+        setError(errorMsg);
+        toast.error(errorMsg, { toastId: "doctor-fetch-error" });
+        navigate("/login", { replace: true });
+      } finally {
+        setLoading(false);
       }
-      // Mock data for testing
-      setDoctorId(1);
-      setAppointments([
-        {
-          id: 1,
-          patient: { id: 1, fullName: "John Doe" },
-          doctor: { id: 1 },
-          appointmentDateTime: "2025-05-15T10:00:00",
-          status: "SCHEDULED",
-          createdAt: "2025-05-14T08:00:00",
-        },
-        {
-          id: 2,
-          patient: { id: 2, fullName: "Jane Smith" },
-          doctor: { id: 1 },
-          appointmentDateTime: "2025-05-16T12:00:00",
-          status: "SCHEDULED",
-          createdAt: "2025-05-14T09:00:00",
-        },
-      ]);
-      setSchedules([
-        {
-          id: 1,
-          doctor: { id: 1 },
-          dayOfWeek: "MONDAY",
-          startTime: "09:00",
-          endTime: "17:00",
-        },
-        {
-          id: 2,
-          doctor: { id: 1 },
-          dayOfWeek: "TUESDAY",
-          startTime: "10:00",
-          endTime: "18:00",
-        },
-      ]);
-      setStats({
-        todayAppointments: 1,
-        pendingAppointments: 2,
-        totalPatients: 2,
-      });
-    } finally {
-      setLoading(false);
+    };
+    if (token) {
+      fetchDoctor();
+    } else {
+      setError("No token found. Please log in.");
+      toast.error("No token found. Please log in.", { toastId: "no-token" });
+      navigate("/login", { replace: true });
     }
-  };
+  }, [token, navigate]);
 
-  // Handle Schedule Form
+  // Fetch appointments and schedules
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!doctorId) return;
+      setLoading(true);
+      setError("");
+      try {
+        // Fetch appointments
+        const appointmentsRes = await axios.get(
+          `http://localhost:8090/api/appointments/get-by-doctor/${doctorId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const doctorAppointments = appointmentsRes.data;
+        setAppointments(doctorAppointments.slice(0, 5));
+
+        // Fetch schedules
+        const schedulesRes = await axios.get(
+          `http://localhost:8090/api/doctor-schedules/doctor/${doctorId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setSchedules(schedulesRes.data);
+
+        // Calculate stats
+        const today = new Date().toDateString();
+        setStats({
+          todayAppointments: doctorAppointments.filter(
+            (appt) =>
+              new Date(appt.appointmentDateTime).toDateString() === today
+          ).length,
+          pendingAppointments: doctorAppointments.filter(
+            (appt) => appt.status === "SCHEDULED"
+          ).length,
+          totalPatients: new Set(
+            doctorAppointments.map((appt) => appt.patient.id)
+          ).size,
+        });
+      } catch (err) {
+        const errorMsg =
+          err.response?.status === 401
+            ? "Unauthorized: Please log in as a doctor."
+            : err.response?.data?.message || "Failed to fetch data";
+        setError(errorMsg);
+        toast.error(errorMsg, { toastId: "data-fetch-error" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [doctorId, token]);
+
   const handleScheduleInputChange = (e) => {
     const { name, value } = e.target;
     setScheduleForm({ ...scheduleForm, [name]: value });
   };
 
+  const validateScheduleForm = () => {
+    if (
+      !scheduleForm.dayOfWeek ||
+      !scheduleForm.startTime ||
+      !scheduleForm.endTime
+    ) {
+      return "All fields are required.";
+    }
+    const start = new Date(`1970-01-01T${scheduleForm.startTime}:00`);
+    const end = new Date(`1970-01-01T${scheduleForm.endTime}:00`);
+    if (end <= start) {
+      return "End time must be after start time.";
+    }
+    return null;
+  };
+
   const handleScheduleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    const validationError = validateScheduleForm();
+    if (validationError) {
+      setError(validationError);
+      toast.error(validationError, { toastId: "schedule-validation-error" });
+      return;
+    }
+    setOperationLoading(true);
     try {
       const scheduleData = {
         doctorId: doctorId,
@@ -165,27 +167,42 @@ const DoctorDashboard = () => {
         slotDuration: 30,
       };
       if (editingScheduleId) {
-        // Update schedule
+        const updatedSchedule = {
+          id: editingScheduleId,
+          ...scheduleData,
+        };
         await axios.put(
           `http://localhost:8090/api/doctor-schedules/${editingScheduleId}`,
           scheduleData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        setSchedules((prev) =>
+          prev.map((sched) =>
+            sched.id === editingScheduleId ? updatedSchedule : sched
+          )
+        );
+        toast.success("Schedule updated successfully!", {
+          toastId: "schedule-update",
+        });
       } else {
-        // Create schedule
-        await axios.post(
+        const { data: newSchedule } = await axios.post(
           "http://localhost:8090/api/doctor-schedules",
           scheduleData,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
+        setSchedules((prev) => [...prev, newSchedule]);
+        toast.success("Schedule added successfully!", {
+          toastId: "schedule-add",
+        });
       }
       setScheduleForm({ dayOfWeek: "", startTime: "", endTime: "" });
       setEditingScheduleId(null);
-      fetchData(); // Refresh schedules
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to save schedule");
+      const errorMsg = err.response?.data?.message || "Failed to save schedule";
+      setError(errorMsg);
+      toast.error(errorMsg, { toastId: "schedule-error" });
+    } finally {
+      setOperationLoading(false);
     }
   };
 
@@ -199,23 +216,34 @@ const DoctorDashboard = () => {
   };
 
   const handleDeleteSchedule = async (id) => {
+    setError("");
+    setOperationLoading(true);
     try {
       await axios.delete(`http://localhost:8090/api/doctor-schedules/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchData(); // Refresh schedules
+      setSchedules((prev) => prev.filter((sched) => sched.id !== id));
+      toast.success("Schedule deleted successfully!", {
+        toastId: "schedule-delete",
+      });
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete schedule");
+      const errorMsg =
+        err.response?.data?.message || "Failed to delete schedule";
+      setError(errorMsg);
+      toast.error(errorMsg, { toastId: "schedule-error" });
+    } finally {
+      setOperationLoading(false);
     }
   };
 
-  // Logout
   const handleLogout = () => {
+    console.log("Logout clicked");
     localStorage.removeItem("jwtToken");
-    navigate("/login");
+    localStorage.removeItem("userRole");
+    window.dispatchEvent(new Event("authChange"));
+    navigate("/login", { replace: true });
   };
 
-  // Line Chart: Appointment Trend (7 days)
   const getChartData = () => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 7);
@@ -272,6 +300,7 @@ const DoctorDashboard = () => {
           <button
             onClick={handleLogout}
             className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors shadow-md"
+            disabled={operationLoading}
           >
             Logout
           </button>
@@ -382,6 +411,7 @@ const DoctorDashboard = () => {
                   onChange={handleScheduleInputChange}
                   className="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                   required
+                  disabled={operationLoading}
                 >
                   <option value="">Select Day</option>
                   {[
@@ -410,6 +440,7 @@ const DoctorDashboard = () => {
                   onChange={handleScheduleInputChange}
                   className="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                   required
+                  disabled={operationLoading}
                 />
               </div>
               <div>
@@ -423,13 +454,15 @@ const DoctorDashboard = () => {
                   onChange={handleScheduleInputChange}
                   className="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                   required
+                  disabled={operationLoading}
                 />
               </div>
             </div>
             <div className="mt-4">
               <button
                 type="submit"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-400"
+                disabled={operationLoading}
               >
                 {editingScheduleId ? "Update Schedule" : "Add Schedule"}
               </button>
@@ -444,7 +477,8 @@ const DoctorDashboard = () => {
                     });
                     setEditingScheduleId(null);
                   }}
-                  className="ml-4 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="ml-4 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors disabled:bg-gray-200"
+                  disabled={operationLoading}
                 >
                   Cancel
                 </button>
@@ -493,12 +527,14 @@ const DoctorDashboard = () => {
                       <button
                         onClick={() => handleEditSchedule(schedule)}
                         className="text-indigo-600 hover:text-indigo-800 mr-4"
+                        disabled={operationLoading}
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteSchedule(schedule.id)}
                         className="text-red-600 hover:text-red-800"
+                        disabled={operationLoading}
                       >
                         Delete
                       </button>
