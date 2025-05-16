@@ -419,7 +419,7 @@ const HospitalRooms = () => {
                         {booking.room.roomNumber}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {booking.user.fullName}
+                        {booking.user.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {new Date(booking.startDateTime).toLocaleString()}

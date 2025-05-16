@@ -1,3 +1,4 @@
+// App.js
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -14,15 +15,14 @@ import About from "./pages/About";
 import Services from "./pages/Services";
 import Doctors from "./pages/Doctors";
 import DoctorDetail from "./pages/DoctorDetail";
-import Appointment from "./pages/Appointment";
 import Contact from "./pages/Contact";
 import Faqs from "./pages/Faqs";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import RegisterDoctor from "./pages/AdminDashboard/RegisterDoctor";
 import RegisterPatient from "./pages/AdminDashboard/RegisterPatient";
-import HospitalResources from "./pages/AdminDashboard/HospitalResources";
 import HospitalRooms from "./pages/AdminDashboard/HospitalRooms";
+import HospitalResources from "./pages/AdminDashboard/HospitalResources";
 import MyBookings from "./pages/MyBookings";
 import AdminDashboard from "./pages/AdminDashboard/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
@@ -31,9 +31,9 @@ import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import { Toaster } from "react-hot-toast";
 import RoomList from "./pages/RoomListPage";
-import HospitalResources from "./pages/HospitalResourcePage";
 import AdminLayout from "./components/layout/AdminLayout";
 import DoctorLayout from "./components/layout/DoctorLayout";
+import HospitalResource from "./pages/HospitalResourcePage";
 
 function AppContent() {
   const location = useLocation();
@@ -51,11 +51,16 @@ function AppContent() {
           <Route path="/services" element={<Services />} />
           <Route path="/doctors" element={<Doctors />} />
           <Route path="/doctors/:id" element={<DoctorDetail />} />
-          <Route path="/appointment" element={<Appointment />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/faqs" element={<Faqs />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/my-bookings" element={<MyBookings />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/rooms" element={<RoomList />} />
+          <Route path="/resources" element={<HospitalResource />} />
+
+          {/* Admin Layout Routes */}
           <Route element={<AdminLayout />}>
             <Route path="/admin/doctors" element={<RegisterDoctor />} />
             <Route path="/admin/patients" element={<RegisterPatient />} />
@@ -64,12 +69,12 @@ function AppContent() {
             <Route path="/admin/doctor-schedule" element={<DoctorSchedule />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
+
+          {/* Doctor Layout Routes */}
           <Route element={<DoctorLayout />}>
             <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
           </Route>
-          <Route path="/my-bookings" element={<MyBookings />} />
-          <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-          <Route path="/profile" element={<Profile />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
@@ -82,33 +87,29 @@ function App() {
   return (
     <TooltipProvider>
       <Router>
-         <Toaster position="top-center"/>
-        <div className="flex flex-col min-h-screen">
-          <Navbar />
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/doctors" element={<Doctors />} />
-              <Route path="/doctors/:id" element={<DoctorDetail />} />
-              <Route path="/appointment" element={<Appointment />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/faqs" element={<Faqs />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/my-bookings" element={<MyBookings />} />
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
-              <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/doctor-schedule" element={<DoctorSchedule />} />
-              <Route path="/rooms" element={<RoomList />} />
-              <Route path="/hospital-resource" element={<HospitalResources />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              border: "1px solid #e2e8f0",
+              padding: "8px",
+              color: "#4a5568",
+            },
+            success: {
+              iconTheme: {
+                primary: "#10b981",
+                secondary: "#ffffff",
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: "#ef4444",
+                secondary: "#ffffff",
+              },
+            },
+          }}
+        />
         <AppContent />
       </Router>
     </TooltipProvider>

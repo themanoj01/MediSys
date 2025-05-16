@@ -38,7 +38,7 @@ const Profile = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:8090/api/patients/profile/current",
+          "http://localhost:8090/api/patients/me",
           {
             headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,

@@ -15,9 +15,9 @@ import { Button } from "../components/ui/button";
 const About = () => {
   const stats = {
     founded: 1985,
-    doctors: 120,
-    patients: 25000,
-    beds: 350,
+    doctors: 51,
+    patients: 10000,
+    beds: 210,
     departments: 12,
     satisfaction: 98,
   };
@@ -362,7 +362,7 @@ const About = () => {
             medical excellence.
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
-            <Link to="/appointment">
+            <Link to="/doctors">
               <Button
                 size="lg"
                 className="bg-white text-primary hover:bg-gray-100"
