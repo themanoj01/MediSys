@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { X } from "lucide-react";
+import toast from "react-hot-toast";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "../components/ui/button";
 
 const DoctorSchedule = () => {
   const [schedules, setSchedules] = useState([]);
@@ -13,6 +17,7 @@ const DoctorSchedule = () => {
     slotDuration: "30",
   });
   const [editSchedule, setEditSchedule] = useState(null);
+  const [deleteScheduleId, setDeleteScheduleId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,6 +36,7 @@ const DoctorSchedule = () => {
       setDoctors(response.data);
     } catch (err) {
       setError("Failed to fetch doctors");
+      toast.error("Failed to fetch doctors");
     } finally {
       setLoading(false);
     }
@@ -46,9 +52,11 @@ const DoctorSchedule = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      console.log("Schedules fetched:", response.data);
       setSchedules(response.data);
     } catch (err) {
       setError("Failed to fetch schedules");
+      toast.error("Failed to fetch schedules");
     } finally {
       setLoading(false);
     }
@@ -89,10 +97,14 @@ const DoctorSchedule = () => {
         },
       });
       setSuccess("Schedule created successfully");
+      toast.success("Schedule created successfully");
       fetchSchedules(form.doctorId);
       resetForm();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create schedule");
+      const errorMsg =
+        err.response?.data?.message || "Failed to create schedule";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -124,29 +136,50 @@ const DoctorSchedule = () => {
         }
       );
       setSuccess("Schedule updated successfully");
+      toast.success("Schedule updated successfully");
       fetchSchedules(editSchedule.doctorId);
       setEditSchedule(null);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update schedule");
+      const errorMsg =
+        err.response?.data?.message || "Failed to update schedule";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (schedule) => {
-    setEditSchedule({
-      id: schedule.id,
-      doctorId: schedule.doctor.id.toString(),
-      dayOfWeek: schedule.dayOfWeek,
-      startTime: schedule.startTime,
-      endTime: schedule.endTime,
-      slotDuration: schedule.slotDuration.toString(),
-    });
+    console.log("Editing schedule:", schedule);
+    try {
+      const doctorId = form.doctorId;
+      if (!doctorId) {
+        throw new Error("Invalid schedule data: Doctor ID missing");
+      }
+      setEditSchedule({
+        id: schedule.id,
+        doctorId: doctorId.toString(),
+        dayOfWeek: schedule.dayOfWeek || "",
+        startTime: schedule.startTime || "",
+        endTime: schedule.endTime || "",
+        slotDuration: schedule.slotDuration?.toString() || "30",
+      });
+      console.log("Edit modal set with:", {
+        id: schedule.id,
+        doctorId: doctorId.toString(),
+        dayOfWeek: schedule.dayOfWeek,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        slotDuration: schedule.slotDuration?.toString(),
+      });
+    } catch (err) {
+      console.error("Error in handleEdit:", err.message);
+      setError("Failed to load schedule for editing");
+      toast.error("Failed to load schedule for editing");
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this schedule?"))
-      return;
     setError("");
     setSuccess("");
     setLoading(true);
@@ -156,12 +189,25 @@ const DoctorSchedule = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSuccess("Schedule deleted successfully");
+      toast.success("Schedule deleted successfully");
       fetchSchedules(form.doctorId);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete schedule");
+      const errorMsg =
+        err.response?.data?.message || "Failed to delete schedule";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
+      setDeleteScheduleId(null);
     }
+  };
+
+  const openDeleteModal = (id) => {
+    setDeleteScheduleId(id);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteScheduleId(null);
   };
 
   const resetForm = () => {
@@ -181,7 +227,6 @@ const DoctorSchedule = () => {
           Manage Doctor Schedules
         </h1>
 
-        {/* Error/Success Messages */}
         {(error || success) && (
           <div
             className={`p-4 mb-6 rounded-md shadow-sm ${
@@ -195,7 +240,6 @@ const DoctorSchedule = () => {
           </div>
         )}
 
-        {/* Add Schedule Form */}
         <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
             Add New Schedule
@@ -310,7 +354,6 @@ const DoctorSchedule = () => {
           </form>
         </div>
 
-        {/* Schedules Table */}
         {form.doctorId && (
           <div className="bg-white p-6 rounded-xl shadow-lg">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -365,14 +408,20 @@ const DoctorSchedule = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <div className="flex space-x-3">
                             <button
-                              onClick={() => handleEdit(schedule)}
+                              onClick={() => {
+                                console.log(
+                                  "Edit button clicked for schedule:",
+                                  schedule.id
+                                );
+                                handleEdit(schedule);
+                              }}
                               className="text-indigo-600 hover:text-indigo-800 flex items-center"
                               title="Edit"
                             >
                               <FaEdit className="h-5 w-5" />
                             </button>
                             <button
-                              onClick={() => handleDelete(schedule.id)}
+                              onClick={() => openDeleteModal(schedule.id)}
                               className="text-red-600 hover:text-red-800 flex items-center"
                               title="Delete"
                             >
@@ -393,126 +442,176 @@ const DoctorSchedule = () => {
           </div>
         )}
 
-        {/* Edit Modal */}
         {editSchedule && (
           <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Edit Schedule
-              </h2>
-              <form onSubmit={handleEditSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Doctor
-                  </label>
-                  <select
-                    name="doctorId"
-                    value={editSchedule.doctorId}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  >
-                    <option value="">Select Doctor</option>
-                    {doctors.map((doctor) => (
-                      <option key={doctor.id} value={doctor.id}>
-                        {doctor.fullName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Day of Week
-                  </label>
-                  <select
-                    name="dayOfWeek"
-                    value={editSchedule.dayOfWeek}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  >
-                    <option value="">Select Day</option>
-                    {[
-                      "MONDAY",
-                      "TUESDAY",
-                      "WEDNESDAY",
-                      "THURSDAY",
-                      "FRIDAY",
-                      "SATURDAY",
-                      "SUNDAY",
-                    ].map((day) => (
-                      <option key={day} value={day}>
-                        {day}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Start Time
-                  </label>
-                  <input
-                    type="time"
-                    name="startTime"
-                    value={editSchedule.startTime}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    End Time
-                  </label>
-                  <input
-                    type="time"
-                    name="endTime"
-                    value={editSchedule.endTime}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Slot Duration (minutes)
-                  </label>
-                  <select
-                    name="slotDuration"
-                    value={editSchedule.slotDuration}
-                    onChange={handleEditInputChange}
-                    className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  >
-                    {[15, 30, 45, 60].map((duration) => (
-                      <option key={duration} value={duration}>
-                        {duration}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex space-x-4">
+            <Card className="bg-white rounded-xl shadow-2xl max-w-lg w-full">
+              <CardContent className="p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Edit Schedule
+                  </h2>
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className={`flex-1 p-3 rounded-lg text-white font-semibold ${
-                      loading
-                        ? "bg-indigo-400 cursor-not-allowed"
-                        : "bg-indigo-600 hover:bg-indigo-700"
-                    } transition`}
-                  >
-                    {loading ? "Updating..." : "Update Schedule"}
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setEditSchedule(null)}
-                    className="flex-1 p-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition"
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <form onSubmit={handleEditSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Doctor
+                    </label>
+                    <select
+                      name="doctorId"
+                      value={editSchedule.doctorId}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    >
+                      <option value="">Select Doctor</option>
+                      {doctors.map((doctor) => (
+                        <option key={doctor.id} value={doctor.id}>
+                          {doctor.fullName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Day of Week
+                    </label>
+                    <select
+                      name="dayOfWeek"
+                      value={editSchedule.dayOfWeek}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    >
+                      <option value="">Select Day</option>
+                      {[
+                        "MONDAY",
+                        "TUESDAY",
+                        "WEDNESDAY",
+                        "THURSDAY",
+                        "FRIDAY",
+                        "SATURDAY",
+                        "SUNDAY",
+                      ].map((day) => (
+                        <option key={day} value={day}>
+                          {day}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Start Time
+                    </label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      value={editSchedule.startTime}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      End Time
+                    </label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      value={editSchedule.endTime}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Slot Duration (minutes)
+                    </label>
+                    <select
+                      name="slotDuration"
+                      value={editSchedule.slotDuration}
+                      onChange={handleEditInputChange}
+                      className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    >
+                      {[15, 30, 45, 60].map((duration) => (
+                        <option key={duration} value={duration}>
+                          {duration}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className={`flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold p-3 rounded-lg ${
+                        loading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {loading ? "Updating..." : "Update Schedule"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold p-3 rounded-lg"
+                      onClick={() => setEditSchedule(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {deleteScheduleId && (
+          <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+              <CardContent className="p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Confirm Deletion
+                  </h2>
+                  <button
+                    onClick={closeDeleteModal}
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete this schedule? This action
+                  cannot be undone.
+                </p>
+                <div className="flex gap-4">
+                  <Button
+                    onClick={() => handleDelete(deleteScheduleId)}
+                    disabled={loading}
+                    className={`flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold p-3 rounded-lg ${
+                      loading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    {loading ? "Deleting..." : "Delete"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold p-3 rounded-lg"
+                    onClick={closeDeleteModal}
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
-              </form>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
