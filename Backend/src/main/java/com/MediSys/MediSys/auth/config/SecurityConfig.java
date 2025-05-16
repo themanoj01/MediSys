@@ -40,8 +40,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/api/auth/**","/api/doctors/**","/api/appointments/**" ,"/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/uploads/**","/api/doctors","/api/room-bookings/check-availability", "/api/resources","/api/resource-bookings/check-availability").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/appointments/**").hasAnyRole("PATIENT", "DOCTOR")
                         .anyRequest().authenticated()

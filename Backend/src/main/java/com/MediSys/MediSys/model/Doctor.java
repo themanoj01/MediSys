@@ -1,8 +1,11 @@
 package com.MediSys.MediSys.model;
 
 import com.MediSys.MediSys.auth.model.User;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Getter
