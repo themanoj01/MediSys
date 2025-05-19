@@ -34,6 +34,7 @@ import RoomList from "./pages/RoomListPage";
 import AdminLayout from "./components/layout/AdminLayout";
 import DoctorLayout from "./components/layout/DoctorLayout";
 import HospitalResource from "./pages/HospitalResourcePage";
+import PaymentPage from "./pages/PaymentPage";
 
 function AppContent() {
   const location = useLocation();
@@ -59,6 +60,7 @@ function AppContent() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/rooms" element={<RoomList />} />
           <Route path="/resources" element={<HospitalResource />} />
+          <Route path="/payment" element={<PaymentPage />} />
 
           {/* Admin Layout Routes */}
           <Route element={<AdminLayout />}>

@@ -164,6 +164,10 @@ const MyBookings = () => {
     setShowConfirmCancel(true);
   };
 
+  const handlePayNow = (id, type, price) => {
+    window.location.href = `/payment?bookingId=${id}&type=${type}&price=${price}`;
+  };
+
   const confirmCancelBooking = async () => {
     setIsSubmitting(true);
     try {
@@ -270,14 +274,26 @@ const MyBookings = () => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 {booking.status === "BOOKED" && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleCancelBooking(booking.id, type)}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handlePayNow(booking.id, type, booking.price)
+                      }
+                      className="mr-2"
+                    >
+                      Pay Now
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleCancelBooking(booking.id, type)}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                  </>
                 )}
               </td>
             </tr>
